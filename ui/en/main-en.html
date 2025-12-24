@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Lock Management System - AI Assistant Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+            background: #f0f0f0;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 80px;
+            background: linear-gradient(180deg, #1a2a4a 0%, #0d1829 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        .sidebar-time {
+            margin-top: auto;
+            padding: 15px 5px;
+            color: #ffffff;
+            font-size: 11px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .nav-item {
+            width: 100%;
+            padding: 15px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #8899aa;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-item.active {
+            color: #ffffff;
+            background: rgba(200, 170, 100, 0.2);
+            border-left-color: #c9a961;
+        }
+
+        .nav-item svg {
+            width: 28px;
+            height: 28px;
+            margin-bottom: 5px;
+        }
+
+        .nav-item span {
+            font-size: 12px;
+        }
+
+        .nav-spacer {
+            flex: 1;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: #f0f0f0;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 22px;
+            font-weight: normal;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notify-btn {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(26, 42, 74, 0.15);
+            background: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .notify-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #1a2a4a;
+        }
+
+        .notify-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #c9a961;
+            color: #1a2a4a;
+            font-size: 11px;
+            line-height: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status {
+            color: #1a2a4a;
+            font-size: 14px;
+        }
+
+        .admin-dropdown {
+            color: #1a2a4a;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Primary Tabs */
+        .tabs {
+            background: #1a2a4a;
+            display: flex;
+            padding: 0;
+        }
+
+        .tab {
+            padding: 10px 25px;
+            color: #c9a961;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .tab:hover {
+            background: rgba(201, 169, 97, 0.2);
+        }
+
+        .tab.active {
+            background: #c9a961;
+            color: #1a2a4a;
+        }
+
+        /* Secondary Tabs */
+        .sub-tabs {
+            background: #c9a961;
+            padding: 8px 15px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .sub-tab {
+            color: #1a2a4a;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+        }
+
+        .sub-tab:hover {
+            text-decoration: underline;
+        }
+
+        .sub-tab.active {
+            font-weight: bold;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            background: #e8e8e8;
+            overflow: hidden;
+        }
+
+        /* Report Area */
+        .report-area {
+            flex: 1;
+            min-height: 0;
+            background: #ffffff;
+            margin: 10px;
+            border-radius: 4px;
+            overflow: auto;
+        }
+
+        .report-toolbar {
+            background: #f5f5f5;
+            padding: 10px 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .report-toolbar label {
+            font-size: 13px;
+            color: #666;
+        }
+
+                .report-toolbar select,
+        .report-toolbar input {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        .report-toolbar button {
+            padding: 5px 15px;
+            background: #1a2a4a;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .report-table th,
+        .report-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .report-table th {
+            background: #f0f0f0;
+            font-weight: bold;
+            color: #333;
+        }
+
+        /* Bottom Status Bar */
+        .status-bar {
+            background: #1a2a4a;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #8899aa;
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+
+        .status-dot.offline {
+            background: #f44336;
+        }
+
+        .status-dot.warning {
+            background: #FFC107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Home</span>
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17h2v-1h1c.55 0 1-.45 1-1v-3c0-.55-.45-1-1-1h-3v-1h4V8h-2V7h-2v1h-1c-.55 0-1 .45-1 1v3c0 .55.45 1 1 1h3v1H9v2h2v1zm9-13H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2z"/></svg>
+                <span>Check-in</span>
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
+                <span>Key Card</span>
+            </div>
+            <div class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                <span>Reports</span>
+            </div>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.89 2-2V5c0-1.1-.89-2-2-2zm-7 14h-2v-4H6v-2h4V7h2v4h4v2h-4v4z"/></svg>
+                <span>Rooms</span>
+            </div>
+            <a href="overview-dashboard-en.html" class="nav-item" style="text-decoration: none;">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <span>Dashboard</span>
+            </a>
+            <div class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                <span>System</span>
+            </div>
+            <div class="sidebar-time">
+                2025/11/28<br>17:06:23
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1>SPLUS Hotel Locking System</h1>
+                <div class="header-right">
+                    <button class="notify-btn" type="button" title="Notifications" onclick="toggleNotify()">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.7 1.7c-.2.2-.3.45-.3.7 0 .55.45 1 1 1h14c.55 0 1-.45 1-1 0-.25-.1-.5-.29-.71L18 16z"/></svg>
+                        <span class="notify-badge" id="notifyBadge" style="display:none"></span>
+                    </button>
+                    <span class="status">Please insert card encoder!</span>
+                    <span class="admin-dropdown">Admin ▼</span>
+                </div>
+            </header>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab active">Guest Reports</div>
+                <div class="tab">Staff Reports</div>
+                <div class="tab">Event Reports</div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Report Area -->
+                <div class="report-area">
+                    <div class="report-toolbar">
+                        <label>Operator:</label>
+                        <select><option>All</option></select>
+                        <label>Room No:</label>
+                        <input type="text" placeholder="Room No">
+                        <label>Guest:</label>
+                        <input type="text" placeholder="Guest">
+                        <button>🔍 Search</button>
+                        <button>🖨 Print</button>
+                    </div>
+                    <div class="report-toolbar">
+                        <input type="checkbox" checked> All Time
+                        <label>Check-in From</label>
+                        <input type="date" value="2025-11-25">
+                        <label>To</label>
+                        <input type="date" value="2025-11-28">
+                    </div>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Guest</th>
+                                <th>Room Type</th>
+                                <th>Room No</th>
+                                <th>Guest Type</th>
+                                <th>Rate Type</th>
+                                <th>Check-in Time</th>
+                                <th>Expected Departure</th>
+                                <th>Cards Issued</th>
+                                <th>Cards Returned</th>
+                                <th>ID Type</th>
+                                <th>ID Number</th>
+                                <th>Area 1</th>
+                                <th>Area 2</th>
+                                <th>Operator</th>
+                                <th>Remarks</th>
+                                <th>Family Room</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Empty Data -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bottom Status Bar -->
+            <div class="status-bar">
+                <div class="status-indicators">
+                    <div class="status-indicator">
+                        <div class="status-dot offline"></div>
+                        <span>Card Encoder</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot offline"></div>
+                        <span>Lock Service</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Cloud Service</span>
+                    </div>
+                </div>
+                <span>DESKTOP-06NQ78P</span>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleNotify() {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'toggleNotify' }, '*');
+            } else {
+                alert('Opening notification panel...');
+            }
+        }
+
+        // Top bell badge: sync unread count
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'notifyCount') {
+                const badge = document.getElementById('notifyBadge');
+                if (!badge) return;
+                const count = Number(event.data.count || 0);
+                if (count > 0) {
+                    badge.textContent = String(count);
+                    badge.style.display = '';
+                } else {
+                    badge.textContent = '';
+                    badge.style.display = 'none';
+                }
+            }
+        });
+
+        // Request unread count from shell after switch/load to avoid default badge value
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'requestNotifyCount' }, '*');
+        }
+
+        // Notify shell to close notification panel when clicking page content
+        document.addEventListener('click', function(e) {
+            // Exclude bell button itself
+            if (e.target.closest('.notify-btn')) return;
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'closeNotify' }, '*');
+            }
+        });
+
+        // Intercept navigation links if in iframe
+        if (window.parent !== window) {
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a[href]');
+                if (link && link.href && !link.href.startsWith('javascript:') && !link.href.startsWith('#')) {
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('http') && href.endsWith('.html')) {
+                        e.preventDefault();
+                        window.parent.postMessage({ type: 'navigate', url: href }, '*');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

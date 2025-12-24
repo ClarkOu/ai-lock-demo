@@ -1,0 +1,2473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能门锁管理系统</title>
+    <script>
+        (function () {
+            // Default to English on GitHub Pages, without affecting local file preview.
+            try {
+                if (location.protocol === 'file:') return;
+                if (!/\.github\.io$/i.test(location.hostname)) return;
+
+                const target = new URL('./en/index-en.html', location.href);
+                target.search = location.search;
+                target.hash = location.hash;
+
+                // Avoid redirect loops if user is already on the English entry.
+                if (location.pathname.endsWith('/en/index-en.html')) return;
+
+                location.replace(target.toString());
+            } catch (e) {
+                // Ignore redirect failures.
+            }
+        })();
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            overflow: hidden;
+        }
+
+        /* 主内容 iframe */
+        .main-frame {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+
+        .notify-panel {
+            position: fixed;
+            top: 68px;
+            right: 18px;
+            width: 360px;
+            max-width: calc(100vw - 36px);
+            background: #ffffff;
+            border: 1px solid rgba(26, 42, 74, 0.22);
+            border-radius: 14px;
+            overflow: hidden;
+            z-index: 10002;
+            display: none;
+            background-clip: padding-box;
+            box-shadow:
+                0 18px 48px rgba(0,0,0,0.18),
+                0 0 0 1px rgba(26, 42, 74, 0.10);
+        }
+
+        .notify-panel.show {
+            display: block;
+        }
+
+        .notify-header {
+            padding: 12px 14px;
+            background: linear-gradient(90deg, #1a2a4a 0%, #233556 100%);
+            color: #c9a961;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .notify-header .title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .notify-header button {
+            border: none;
+            background: rgba(255,255,255,0.10);
+            color: #c9a961;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .notify-header button:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        .notify-controls {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(26, 42, 74, 0.10);
+            background: #ffffff;
+        }
+
+        .notify-seg {
+            border: 1px solid rgba(26, 42, 74, 0.12);
+            background: rgba(26, 42, 74, 0.04);
+            color: #1a2a4a;
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .notify-seg:hover {
+            background: rgba(26, 42, 74, 0.06);
+        }
+
+        .notify-seg.active {
+            background: #c9a961;
+            border-color: rgba(201, 169, 97, 0.65);
+            color: #1a2a4a;
+            font-weight: 700;
+        }
+
+        .notify-controls .spacer {
+            flex: 1;
+        }
+
+        .notify-link {
+            border: none;
+            background: transparent;
+            color: #1a2a4a;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 6px 6px;
+            border-radius: 8px;
+        }
+
+        .notify-link:hover {
+            background: rgba(26, 42, 74, 0.05);
+        }
+
+        .notify-list {
+            max-height: 420px;
+            overflow: auto;
+            padding: 10px;
+            background: #ffffff;
+        }
+
+        .notify-item {
+            padding: 10px 12px;
+            border: 1px solid rgba(26, 42, 74, 0.14);
+            color: #333;
+            cursor: pointer;
+            background: #ffffff;
+            border-left: 3px solid transparent;
+            border-radius: 12px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+        }
+
+        .notify-item + .notify-item {
+            margin-top: 10px;
+        }
+
+        .notify-item.unread {
+            border-left-color: rgba(201, 169, 97, 0.95);
+        }
+
+        .notify-item:hover {
+            border-color: rgba(26, 42, 74, 0.22);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+        }
+
+        .notify-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notify-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            flex-shrink: 0;
+        }
+
+        .notify-item.unread .notify-dot {
+            background: #c9a961;
+        }
+
+        .notify-pill {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(26, 42, 74, 0.08);
+            color: #1a2a4a;
+            flex-shrink: 0;
+        }
+
+        .notify-level {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.06);
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        .notify-level.urgent { background: rgba(244, 67, 54, 0.12); color: #b71c1c; }
+        .notify-level.warning { background: rgba(255, 152, 0, 0.14); color: #a35b00; }
+        .notify-level.info { background: rgba(33, 150, 243, 0.12); color: #0d47a1; }
+
+        .notify-title {
+            font-size: 13px;
+            color: #111;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .notify-item .meta {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.35;
+        }
+
+        .notify-empty {
+            padding: 26px 14px;
+            color: #6b7280;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        /* 通知详情弹窗 */
+        .notify-detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 10010;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .notify-detail-overlay.show {
+            display: flex;
+        }
+
+        .notify-detail-modal {
+            width: 560px;
+            max-width: calc(100vw - 36px);
+            background: #ffffff;
+            border: 1px solid rgba(26, 42, 74, 0.18);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.22),
+                0 0 0 1px rgba(26, 42, 74, 0.10);
+        }
+
+        .notify-detail-header {
+            padding: 12px 14px;
+            background: linear-gradient(90deg, #1a2a4a 0%, #233556 100%);
+            color: #c9a961;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .notify-detail-header .title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .notify-detail-close {
+            border: none;
+            background: rgba(255,255,255,0.10);
+            color: #c9a961;
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .notify-detail-close:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        .notify-detail-body {
+            padding: 14px;
+        }
+
+        .notify-detail-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .notify-detail-time {
+            color: rgba(26, 42, 74, 0.70);
+            font-size: 12px;
+        }
+
+        .notify-detail-title {
+            font-size: 16px;
+            color: #111;
+            font-weight: 700;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+
+        .notify-detail-meta {
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .notify-detail-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 12px 14px;
+            border-top: 1px solid rgba(26, 42, 74, 0.10);
+            background: #ffffff;
+        }
+
+        .notify-detail-actions button {
+            border: none;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .notify-detail-actions .btn-secondary {
+            background: rgba(26, 42, 74, 0.06);
+            color: #1a2a4a;
+        }
+
+        .notify-detail-actions .btn-secondary:hover {
+            background: rgba(26, 42, 74, 0.08);
+        }
+
+        .notify-detail-actions .btn-primary {
+            background: #c9a961;
+            color: #1a2a4a;
+            font-weight: 700;
+        }
+
+        .notify-detail-actions .btn-primary:hover {
+            filter: brightness(0.98);
+        }
+
+        /* 右下角悬浮球 */
+        .ai-float-btn {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(201, 169, 97, 0.4);
+            z-index: 10001;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ai-float-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 24px rgba(201, 169, 97, 0.5);
+        }
+
+        .ai-float-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ai-float-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: #1a2a4a;
+            transition: transform 0.3s ease;
+        }
+
+        .ai-float-btn.active {
+            background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
+            box-shadow: 0 4px 16px rgba(26, 42, 74, 0.4);
+        }
+
+        .ai-float-btn.active svg {
+            fill: #c9a961;
+            transform: rotate(90deg);
+        }
+
+        .ai-float-btn .icon-chat { display: block; }
+        .ai-float-btn .icon-close { display: none; }
+        .ai-float-btn.active .icon-chat { display: none; }
+        .ai-float-btn.active .icon-close { display: block; }
+
+        /* AI助手浮动面板 */
+        .ai-panel {
+            position: fixed;
+            right: 30px;
+            bottom: 100px;
+            width: 480px;
+            height: 680px;
+            max-height: calc(100vh - 140px);
+            background: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            overflow: hidden;
+            z-index: 10000;
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transform-origin: bottom right;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ai-panel.show {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .ai-header {
+            background: linear-gradient(90deg, #1a2a4a 0%, #2a3a5a 100%);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-header h3 {
+            color: #c9a961;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-header h3 svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .ai-close {
+            color: #8899aa;
+            cursor: pointer;
+            font-size: 20px;
+            background: none;
+            border: none;
+        }
+
+        .ai-close:hover {
+            color: #ffffff;
+        }
+
+        .ai-expand {
+            color: #8899aa;
+            cursor: pointer;
+            font-size: 16px;
+            background: none;
+            border: none;
+            margin-right: 10px;
+        }
+
+        .ai-expand:hover {
+            color: #ffffff;
+        }
+
+        .ai-header-btns {
+            display: flex;
+            align-items: center;
+        }
+
+        /* 放大模式 */
+        .ai-panel.expanded {
+            right: 50%;
+            bottom: 50%;
+            transform: translate(50%, 50%) !important;
+            width: 900px;
+            height: 92vh;
+            max-height: 92vh;
+            transform-origin: center center;
+        }
+
+        .ai-panel.expanded.show {
+            transform: translate(50%, 50%) !important;
+        }
+
+        /* Artifacts Canvas 模式（左右分栏） */
+        .ai-panel.canvas-mode {
+            width: 880px;
+        }
+        .ai-panel.canvas-mode.expanded {
+            width: 1100px;
+        }
+        .ai-panel-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        /* 左侧 Canvas 区域 */
+        .ai-canvas {
+            width: 0;
+            min-width: 0;
+            background: linear-gradient(180deg, #f0f4f8 0%, #e8ecf1 100%);
+            border-right: 1px solid #dde3ea;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .ai-panel.canvas-mode .ai-canvas {
+            width: 380px;
+            min-width: 380px;
+        }
+        .ai-canvas-header {
+            padding: 12px 16px;
+            background: rgba(26, 42, 74, 0.04);
+            border-bottom: 1px solid #dde3ea;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .ai-canvas-header .title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a2a4a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .ai-canvas-close {
+            background: none;
+            border: none;
+            color: #8899aa;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px;
+            border-radius: 6px;
+        }
+        .ai-canvas-close:hover {
+            background: rgba(0,0,0,0.06);
+            color: #1a2a4a;
+        }
+        .ai-canvas-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+        /* 右侧对话区域包装 */
+        .ai-chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* Canvas 内容状态 */
+        .canvas-stage { display: none; width: 100%; }
+        .canvas-stage.active { display: flex; flex-direction: column; align-items: center; }
+
+        /* 阶段1：待机引导 */
+        .canvas-waiting .card-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 8px 32px rgba(201, 169, 97, 0.3);
+        }
+        .canvas-waiting .card-icon svg {
+            width: 56px;
+            height: 56px;
+            fill: #1a2a4a;
+        }
+        .canvas-waiting .card-icon::after {
+            content: '';
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border: 2px solid rgba(201, 169, 97, 0.4);
+            border-radius: 50%;
+            animation: pulse-ring 2s ease-out infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+        .canvas-waiting .hint {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a2a4a;
+            margin-bottom: 8px;
+        }
+        .canvas-waiting .sub-hint {
+            font-size: 13px;
+            color: #6b7a8a;
+        }
+        
+        /* 演示场景按钮区 - 固定在canvas底部 */
+        .demo-scenarios {
+            padding: 16px;
+            border-top: 1px dashed #e0e0e0;
+            background: #fafafa;
+        }
+        .demo-scenarios .demo-title {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .demo-scenarios .demo-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+        }
+        .demo-scenarios .demo-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .demo-btn {
+            padding: 5px 10px;
+            border-radius: 14px;
+            border: none;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            color: #666;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            white-space: nowrap;
+        }
+        .demo-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .demo-btn.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .demo-btn.error:hover {
+            background: #ffcdd2;
+        }
+        .demo-btn.warning {
+            background: #fff8e1;
+            color: #f57c00;
+        }
+        .demo-btn.warning:hover {
+            background: #ffecb3;
+        }
+        .demo-btn.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .demo-btn.success:hover {
+            background: #c8e6c9;
+        }
+
+        /* 阶段2：分析中 */
+        .canvas-analyzing .scan-animation {
+            width: 140px;
+            height: 140px;
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .canvas-analyzing .scan-card {
+            width: 100px;
+            height: 66px;
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            border-radius: 8px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 16px rgba(201, 169, 97, 0.4);
+        }
+        .canvas-analyzing .scan-line {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 120px;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #4fc3f7, transparent);
+            transform: translateX(-50%);
+            animation: scan-move 1.5s ease-in-out infinite;
+            border-radius: 2px;
+        }
+        @keyframes scan-move {
+            0%, 100% { top: 10px; opacity: 0.5; }
+            50% { top: 130px; opacity: 1; }
+        }
+        .canvas-analyzing .status-text {
+            font-size: 15px;
+            color: #1a2a4a;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        .canvas-analyzing .analyzing-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+            width: 100%;
+            max-width: 200px;
+        }
+        .canvas-analyzing .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #999;
+            transition: all 0.3s;
+        }
+        .canvas-analyzing .step-item.active {
+            color: #1a2a4a;
+        }
+        .canvas-analyzing .step-item.done {
+            color: #2e7d32;
+        }
+        .canvas-analyzing .step-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .canvas-analyzing .step-item.active .step-icon {
+            background: #c9a961;
+        }
+        .canvas-analyzing .step-item.active .step-icon.loading {
+            background: transparent;
+            border: 2px solid #c9a961;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+        .canvas-analyzing .step-item.done .step-icon {
+            background: #4caf50;
+        }
+        .canvas-analyzing .step-item.done .step-icon::after {
+            content: '✓';
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 阶段3：结果 */
+        .canvas-result .result-card {
+            width: 100%;
+            max-width: 320px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .canvas-result .result-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .canvas-result .result-header.error {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        }
+        .canvas-result .result-header.success {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        .canvas-result .result-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .canvas-result .result-header.error .result-icon {
+            background: #e53935;
+        }
+        .canvas-result .result-header.success .result-icon {
+            background: #43a047;
+        }
+        .canvas-result .result-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: #fff;
+        }
+        .canvas-result .result-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .canvas-result .result-header.error .result-title { color: #b71c1c; }
+        .canvas-result .result-header.success .result-title { color: #1b5e20; }
+        .canvas-result .result-body {
+            padding: 16px 20px;
+        }
+        .canvas-result .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+        .canvas-result .result-row:last-child { border-bottom: none; }
+        .canvas-result .result-label { color: #8899aa; }
+        .canvas-result .result-value { color: #1a2a4a; font-weight: 500; }
+        .canvas-result .result-value.error { color: #e53935; }
+        .canvas-result .result-actions {
+            padding: 16px 20px;
+            background: #fafafa;
+            display: flex;
+            gap: 10px;
+        }
+        .canvas-result .btn-canvas {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .canvas-result .btn-canvas.primary {
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            color: #1a2a4a;
+        }
+        .canvas-result .btn-canvas.primary:hover {
+            box-shadow: 0 4px 16px rgba(201, 169, 97, 0.4);
+            transform: translateY(-1px);
+        }
+        .canvas-result .btn-canvas.secondary {
+            background: #f5f5f5;
+            color: #555;
+        }
+        .canvas-result .btn-canvas.secondary:hover {
+            background: #eee;
+        }
+
+        /* 放大时的背景遮罩 */
+        .ai-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .ai-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .ai-messages {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        .ai-messages.hidden {
+            display: none;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.user {
+            align-items: flex-end;
+        }
+
+        .message.ai {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            color: #1a2a4a;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai .message-bubble {
+            background: #ffffff;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* AI消息气泡容器 */
+        .message.ai .bubble-wrapper {
+            position: relative;
+            max-width: 85%;
+        }
+
+        .message.ai .bubble-wrapper .message-bubble {
+            max-width: 100%;
+        }
+
+        /* 赞/踩按钮 - 在消息框外部右下角 */
+        .feedback-btns {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .message.ai .bubble-wrapper:hover .feedback-btns {
+            opacity: 1;
+        }
+
+        .feedback-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .feedback-btn:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .feedback-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #999;
+        }
+
+        .feedback-btn:hover svg {
+            fill: #666;
+        }
+
+        .feedback-btn.active svg {
+            fill: #1a73e8;
+        }
+
+        .feedback-btn.active.dislike svg {
+            fill: #e53935;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* 新会话分隔线 */
+        .new-session-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .new-session-divider::before,
+        .new-session-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .new-session-divider span {
+            padding: 0 12px;
+            white-space: nowrap;
+        }
+
+        /* 数据卡片 */
+        .data-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .data-card-header {
+            background: #f5f5f5;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #666;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-card table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .data-card th {
+            background: #1a2a4a;
+            color: #c9a961;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        .data-card td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-card tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-card-actions {
+            padding: 8px 12px;
+            background: #f9f9f9;
+            display: flex;
+            gap: 10px;
+        }
+
+        .data-card-actions button {
+            font-size: 12px;
+            padding: 4px 10px;
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .data-card-actions button:hover {
+            background: #f0f0f0;
+        }
+
+        /* 引用标注 */
+        .reference {
+            font-size: 12px;
+            color: #888;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            line-height: 1.8;
+        }
+
+        .reference-item {
+            display: block;
+            color: #666;
+        }
+
+        .reference a {
+            color: #1a2a4a;
+            text-decoration: none;
+        }
+
+        .reference a:hover {
+            text-decoration: underline;
+        }
+
+        /* 无法回答样式 */
+        .unable-to-answer {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #fffbf0;
+            border: 1px solid #ffe7ba;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 4px;
+        }
+
+        .unable-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .unable-text {
+            color: #8a6d3b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* 改写建议 */
+        .ai-suggestions {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .suggestion-item {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        /* 重试按钮 */
+        .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            margin-left: 6px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.2s;
+            vertical-align: middle;
+        }
+
+        .retry-btn:hover {
+            color: #666;
+        }
+
+        .message-time {
+            display: flex;
+            align-items: center;
+        }
+
+        /* 推荐问题 */
+        .suggested-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .suggested-question {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #f0f7ff;
+            border: 1px solid #d0e5ff;
+            border-radius: 16px;
+            color: #1a73e8;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggested-question:hover {
+            background: #e0efff;
+            border-color: #1a73e8;
+        }
+
+        /* 正文中的引用序号 */
+        .cite {
+            color: #1a73e8;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .cite:hover {
+            text-decoration: underline;
+        }
+
+        /* 快捷提示 */
+        .quick-prompts {
+            padding: 10px 15px;
+            background: #f0f0f0;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-prompts-title {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .quick-prompts-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .quick-prompt {
+            font-size: 12px;
+            padding: 6px 12px;
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            border-radius: 15px;
+            cursor: pointer;
+            color: #555;
+            transition: all 0.2s;
+        }
+
+        .quick-prompt:hover {
+            background: #c9a961;
+            border-color: #c9a961;
+            color: #1a2a4a;
+        }
+
+        /* 工具菜单 */
+        .ai-tools-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .ai-tools-btn:hover {
+            background: #ebebeb;
+            border-color: #ccc;
+        }
+        .ai-tools-btn.active {
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            border-color: #4F46E5;
+        }
+        .ai-tools-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #666;
+            transition: all 0.3s;
+        }
+        .ai-tools-btn.active svg {
+            fill: white;
+            transform: rotate(45deg);
+        }
+        .ai-tools-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 8px;
+            display: none;
+            min-width: 160px;
+            z-index: 100;
+        }
+        .ai-tools-menu.show {
+            display: block;
+            animation: fadeInUp 0.2s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .ai-tools-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .ai-tools-menu-item:hover {
+            background: linear-gradient(135deg, #f0f4ff 0%, #fff0f8 100%);
+            color: #6b4fbb;
+        }
+        .ai-tools-menu-item .tool-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .ai-tools-menu-item:nth-child(1) .tool-icon {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        .ai-tools-menu-item:nth-child(2) .tool-icon {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        /* 初始欢迎页面 */
+        .ai-welcome {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 30px;
+            background: #f8f9fa;
+            text-align: center;
+        }
+
+        .ai-welcome.hidden {
+            display: none;
+        }
+
+        .ai-welcome-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .ai-welcome-icon svg {
+            width: 32px;
+            height: 32px;
+            fill: #1a2a4a;
+        }
+
+        .ai-welcome-title {
+            font-size: 20px;
+            color: #c9a961;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .ai-welcome-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .ai-welcome-prompts {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .ai-welcome-prompt {
+            padding: 14px 20px;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .ai-welcome-prompt:hover {
+            border-color: #c9a961;
+            background: linear-gradient(135deg, rgba(201,169,97,0.1) 0%, rgba(166,138,58,0.1) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        /* 输入区域 */
+        .ai-input-area {
+            padding: 15px;
+            background: #ffffff;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .ai-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .ai-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            min-height: 44px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        .ai-input:focus {
+            border-color: #c9a961;
+        }
+
+        .ai-send {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-send svg {
+            width: 20px;
+            height: 20px;
+            fill: #c9a961;
+        }
+
+        .ai-send:hover {
+            background: linear-gradient(135deg, #2a3a5a 0%, #3a4a6a 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- 主内容区 iframe -->
+    <iframe id="mainFrame" class="main-frame" src="main.html"></iframe>
+
+    <!-- 通知面板（占位：用于邮件通知/规则配置入口） -->
+    <div class="notify-panel" id="notifyPanel">
+        <div class="notify-header">
+            <div class="title">通知</div>
+            <button onclick="openNotifySettings()">通知设置</button>
+        </div>
+        <div class="notify-controls">
+            <button class="notify-seg" id="notifyFilterAll" onclick="setNotifyFilter('all')">全部</button>
+            <button class="notify-seg active" id="notifyFilterUnread" onclick="setNotifyFilter('unread')">未读</button>
+            <div class="spacer"></div>
+            <button class="notify-link" onclick="markAllRead()">全部已读</button>
+        </div>
+        <div class="notify-list" id="notifyList"></div>
+    </div>
+
+    <!-- 通知详情弹窗（点击单条通知后打开，不直接跳转） -->
+    <div class="notify-detail-overlay" id="notifyDetailOverlay" onclick="closeNotifyDetail()">
+        <div class="notify-detail-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+            <div class="notify-detail-header">
+                <div class="title">通知详情</div>
+                <button class="notify-detail-close" onclick="closeNotifyDetail()" aria-label="关闭">×</button>
+            </div>
+            <div class="notify-detail-body">
+                <div class="notify-detail-badges">
+                    <span class="notify-pill" id="notifyDetailModule">-</span>
+                    <span class="notify-level info" id="notifyDetailLevel">提示</span>
+                    <span class="notify-detail-time" id="notifyDetailTime">-</span>
+                </div>
+                <div class="notify-detail-title" id="notifyDetailTitle">-</div>
+                <div class="notify-detail-meta" id="notifyDetailMeta">-</div>
+            </div>
+            <div class="notify-detail-actions">
+                <button class="btn-secondary" onclick="closeNotifyDetail()">关闭</button>
+                <button class="btn-primary" id="notifyDetailGoBtn" onclick="goNotifyDetailTarget()">前往看板</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 放大时的背景遮罩 -->
+    <div class="ai-overlay" id="aiOverlay" onclick="toggleExpand()"></div>
+
+    <!-- AI助手浮动面板 -->
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                HostPilot
+            </h3>
+            <div class="ai-header-btns">
+                <button class="ai-expand" id="aiExpandBtn" onclick="toggleExpand()" title="放大/缩小">
+                    <svg id="expandIcon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                    <svg id="shrinkIcon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+                </button>
+                <button class="ai-close" onclick="toggleAI()">×</button>
+            </div>
+        </div>
+
+        <!-- Canvas + Chat 双区布局 -->
+        <div class="ai-panel-body">
+            <!-- 左侧 Canvas 区域（Artifacts） -->
+            <div class="ai-canvas" id="aiCanvas">
+                <div class="ai-canvas-header">
+                    <div class="title">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
+                        门卡诊断
+                    </div>
+                    <button class="ai-canvas-close" onclick="closeCanvas()" title="关闭">×</button>
+                </div>
+                <div class="ai-canvas-content">
+                    <!-- 阶段1：待机 -->
+                    <div class="canvas-stage canvas-waiting active" id="canvasWaiting">
+                        <div class="card-icon">
+                            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12z"/></svg>
+                        </div>
+                        <div class="hint">请放卡</div>
+                        <div class="sub-hint">将门卡放置在制卡机上</div>
+                    </div>
+                    <!-- 阶段2：分析中 -->
+                    <div class="canvas-stage canvas-analyzing" id="canvasAnalyzing">
+                        <div class="scan-animation">
+                            <div class="scan-card"></div>
+                            <div class="scan-line"></div>
+                        </div>
+                        <div class="status-text">正在分析卡片...</div>
+                        <div class="analyzing-steps">
+                            <div class="step-item" id="step1">
+                                <span class="step-icon loading"></span>
+                                <span>读取卡片信息</span>
+                            </div>
+                            <div class="step-item" id="step2">
+                                <span class="step-icon"></span>
+                                <span>查询系统记录</span>
+                            </div>
+                            <div class="step-item" id="step3">
+                                <span class="step-icon"></span>
+                                <span>检查门锁状态</span>
+                            </div>
+                            <div class="step-item" id="step4">
+                                <span class="step-icon"></span>
+                                <span>分析诊断结果</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 阶段3：结果 -->
+                    <div class="canvas-stage canvas-result" id="canvasResult">
+                        <div class="result-card">
+                            <div class="result-header error" id="resultHeader">
+                                <div class="result-icon">
+                                    <svg viewBox="0 0 24 24" id="resultIconSvg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                </div>
+                                <div class="result-title" id="resultTitle">卡片已过期</div>
+                            </div>
+                            <div class="result-body" id="resultBody">
+                                <div class="result-row">
+                                    <span class="result-label">房间号</span>
+                                    <span class="result-value" id="resRoom">1208</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="result-label">卡类型</span>
+                                    <span class="result-value" id="resType">宾客卡</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="result-label">有效期至</span>
+                                    <span class="result-value error" id="resExpiry">12-12 12:00 (已过期)</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="result-label">门锁状态</span>
+                                    <span class="result-value" id="resLock">在线</span>
+                                </div>
+                            </div>
+                            <div class="result-actions">
+                                <button class="btn-canvas secondary" onclick="resetCanvas()">重新分析</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 底部演示场景区 -->
+                <div class="demo-scenarios">
+                    <div class="demo-title">演示场景</div>
+                    <div class="demo-buttons">
+                        <div class="demo-row">
+                            <button class="demo-btn error" onclick="simulateScenario('expired')">🔴 卡片已过期</button>
+                            <button class="demo-btn error" onclick="simulateScenario('lost')">🔴 卡片已挂失</button>
+                            <button class="demo-btn error" onclick="simulateScenario('replaced')">🔴 旧卡被替换</button>
+                        </div>
+                        <div class="demo-row">
+                            <button class="demo-btn warning" onclick="simulateScenario('offline')">🟡 门锁离线</button>
+                            <button class="demo-btn warning" onclick="simulateScenario('lowbattery')">🟡 低电量</button>
+                            <button class="demo-btn warning" onclick="simulateScenario('syncpending')">🟡 同步中</button>
+                            <button class="demo-btn success" onclick="simulateScenario('normal')">🟢 正常</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧对话区域 -->
+            <div class="ai-chat-area">
+        <!-- 初始欢迎页面 -->
+        <div class="ai-welcome" id="aiWelcome">
+            <div class="ai-welcome-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            </div>
+            <div class="ai-welcome-title">你好！我是 HostPilot</div>
+            <div class="ai-welcome-subtitle">我可以帮您解答关于门锁系统的问题</div>
+            <div class="ai-welcome-prompts">
+                <div class="ai-welcome-prompt" onclick="startChat('今日入住情况如何？')">📊 今日入住情况如何？</div>
+                <div class="ai-welcome-prompt" onclick="startChat('查看上个月的报表数据')">📈 查看上个月的报表数据</div>
+                <div class="ai-welcome-prompt" onclick="startChat('二维码开门怎么设置？')">🔐 二维码开门怎么设置？</div>
+            </div>
+        </div>
+
+        <!-- 对话消息区域 -->
+        <div class="ai-messages hidden" id="aiMessages">
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        你好！我是门锁系统AI助手，可以帮你：
+                        <br>• 查询开门记录和报表数据
+                        <br>• 解答门锁操作相关问题
+                        <br>• 生成数据分析报告
+                        <br><br>请问有什么可以帮你的？
+                    </div>
+                    <div class="feedback-btns">
+                        <button class="feedback-btn like" onclick="handleFeedback(this, 'like')" title="有帮助">
+                            <svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        </button>
+                        <button class="feedback-btn dislike" onclick="handleFeedback(this, 'dislike')" title="没帮助">
+                            <svg viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="message-time">17:06</div>
+            </div>
+
+            <div class="message user">
+                <div class="message-bubble">
+                    最近7天开门失败率最高的房间有哪些？
+                </div>
+                <div class="message-time">17:07</div>
+            </div>
+
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        根据最近7天的数据，开门失败率最高的房间如下：
+                        
+                        <div class="data-card">
+                            <div class="data-card-header">📊 近7天开门失败率 Top 5（2025/11/22 - 11/28）</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>房间号</th>
+                                        <th>尝试次数</th>
+                                        <th>失败次数</th>
+                                        <th>失败率</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>1208</td><td>45</td><td>8</td><td style="color:#e53935">17.8%</td></tr>
+                                    <tr><td>0915</td><td>38</td><td>5</td><td style="color:#e53935">13.2%</td></tr>
+                                    <tr><td>0703</td><td>52</td><td>6</td><td style="color:#ff9800">11.5%</td></tr>
+                                    <tr><td>1105</td><td>41</td><td>4</td><td style="color:#ff9800">9.8%</td></tr>
+                                    <tr><td>0812</td><td>33</td><td>3</td><td style="color:#ff9800">9.1%</td></tr>
+                                </tbody>
+                            </table>
+                            <div class="data-card-actions">
+                                <button>导出 CSV</button>
+                                <button>查看详情</button>
+                            </div>
+                        </div>
+
+                        <br>1208房间失败率最高，主要原因是「卡片读取失败」（5次）和「门锁通信超时」（3次），建议检查该房间门锁设备状态。
+                    </div>
+                    <div class="feedback-btns">
+                        <button class="feedback-btn like" onclick="handleFeedback(this, 'like')" title="有帮助">
+                            <svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        </button>
+                        <button class="feedback-btn dislike" onclick="handleFeedback(this, 'dislike')" title="没帮助">
+                            <svg viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="message-time">17:07</div>
+            </div>
+
+            <!-- 新会话分隔线 -->
+            <div class="new-session-divider">
+                <span>以下为新会话</span>
+            </div>
+
+            <div class="message user">
+                <div class="message-bubble">
+                    门锁电池多久需要更换？
+                </div>
+                <div class="message-time">17:08</div>
+            </div>
+
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        门锁电池更换周期取决于使用频率 <span class="cite">[1]</span>：
+
+                        <br><br>• <b>普通房间</b>：约 12-18 个月 <span class="cite">[1]</span>
+                        <br>• <b>高频使用房间</b>（如会议室、公共区域）：约 8-12 个月 <span class="cite">[1]</span>
+                        
+                        <br><br><b>低电量预警</b>：当电量低于 20% 时，系统会自动发出告警 <span class="cite">[2]</span>，建议在收到告警后 7 天内更换。
+
+                        <br><br><b>更换步骤</b> <span class="cite">[3]</span>：
+                        <br>1. 使用管理卡开门
+                        <br>2. 打开门锁内侧电池盖
+                        <br>3. 取出旧电池，装入4节新5号电池
+                        <br>4. 盖好电池盖，用管理卡测试开门
+
+                        <div class="reference">
+                            <span class="reference-item"><b>[1]</b> 《门锁维护手册》 v2.1; 2025/6/15; 第3章 电池更换</span>
+                            <span class="reference-item"><b>[2]</b> 《系统告警配置指南》 v1.3; 2025/8/20; 第5节 低电量预警</span>
+                            <span class="reference-item"><b>[3]</b> 《门锁安装指南》 v1.0; 2025/5/10; 第7章 日常维护</span>
+                        </div>
+                    </div>
+                    <div class="feedback-btns">
+                        <button class="feedback-btn like" onclick="handleFeedback(this, 'like')" title="有帮助">
+                            <svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        </button>
+                        <button class="feedback-btn dislike" onclick="handleFeedback(this, 'dislike')" title="没帮助">
+                            <svg viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="message-time">17:08</div>
+            </div>
+
+            <!-- 用户问题：无法回答场景 -->
+            <div class="message user">
+                <div class="message-bubble">怎么进入健身房？</div>
+                <div class="message-time">17:10</div>
+            </div>
+
+            <!-- AI回复：无命中提示 + 改写建议 -->
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        <div class="unable-to-answer">
+                            <div class="unable-icon">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="#f0ad4e"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            </div>
+                            <div class="unable-text">抱歉，我无法在知识库中找到关于「怎么进入健身房」的相关内容。</div>
+                        </div>
+                        <p style="margin: 12px 0 8px; color: #666; font-size: 13px;">您可以尝试这样问我：</p>
+                        <div class="ai-suggestions">
+                            <div class="suggestion-item">• 如何用房卡开门？</div>
+                            <div class="suggestion-item">• 门锁离线怎么处理？</div>
+                            <div class="suggestion-item">• 查看低电量门锁列表</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="message-time">
+                    17:10
+                    <button class="retry-btn" onclick="retryLastMessage()" title="重试">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快捷提示 -->
+        <div class="quick-prompts" style="display: none;">
+            <div class="quick-prompts-title">快捷提问：</div>
+            <div class="quick-prompts-list">
+                <span class="quick-prompt" onclick="sendQuickPrompt('今日入住情况')">今日入住情况</span>
+                <span class="quick-prompt" onclick="sendQuickPrompt('低电量门锁')">低电量门锁</span>
+                <span class="quick-prompt" onclick="sendQuickPrompt('异常开门事件')">异常开门事件</span>
+                <span class="quick-prompt" onclick="sendQuickPrompt('生成日报')">生成日报</span>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="ai-input-area">
+            <div class="ai-input-wrapper">
+                <div class="ai-tools-container" style="position: relative;">
+                    <button class="ai-tools-btn" id="aiToolsBtn" onclick="toggleToolsMenu()">
+                        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    </button>
+                    <div class="ai-tools-menu" id="aiToolsMenu">
+                        <div class="ai-tools-menu-item" onclick="selectTool('diagnose')">
+                            <span class="tool-icon">🔧</span>
+                            <span>门卡诊断</span>
+                        </div>
+                    </div>
+                </div>
+                <textarea class="ai-input" id="aiInput" placeholder="输入问题，按 Enter 发送..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+                <button class="ai-send" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+            </div><!-- 关闭 ai-chat-area -->
+        </div><!-- 关闭 ai-panel-body -->
+    </div>
+
+    <!-- 右下角浮窗球 -->
+    <div class="ai-float-btn" id="aiFloatBtn" onclick="toggleAI()">
+        <svg class="icon-chat" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </div>
+
+    <script>
+        // 切换 AI 面板
+        function toggleAI() {
+            const panel = document.getElementById('aiPanel');
+            const btn = document.getElementById('aiFloatBtn');
+            const isOpen = panel.classList.contains('show');
+            
+            if (isOpen) {
+                panel.classList.remove('show');
+                btn.classList.remove('active');
+            } else {
+                panel.classList.add('show');
+                btn.classList.add('active');
+                // 滚动到底部
+                const messages = document.getElementById('aiMessages');
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+
+        // 切换放大/缩小
+        function toggleExpand() {
+            const panel = document.getElementById('aiPanel');
+            const overlay = document.getElementById('aiOverlay');
+            const expandIcon = document.getElementById('expandIcon');
+            const shrinkIcon = document.getElementById('shrinkIcon');
+            const isExpanded = panel.classList.contains('expanded');
+            
+            if (isExpanded) {
+                panel.classList.remove('expanded');
+                overlay.classList.remove('show');
+                expandIcon.style.display = 'block';
+                shrinkIcon.style.display = 'none';
+            } else {
+                panel.classList.add('expanded');
+                overlay.classList.add('show');
+                expandIcon.style.display = 'none';
+                shrinkIcon.style.display = 'block';
+            }
+        }
+
+        // 处理赞/踩反馈
+        function handleFeedback(btn, type) {
+            const wrapper = btn.closest('.feedback-btns');
+            const likeBtn = wrapper.querySelector('.like');
+            const dislikeBtn = wrapper.querySelector('.dislike');
+            
+            if (type === 'like') {
+                if (likeBtn.classList.contains('active')) {
+                    likeBtn.classList.remove('active');
+                } else {
+                    likeBtn.classList.add('active');
+                    dislikeBtn.classList.remove('active');
+                }
+            } else {
+                if (dislikeBtn.classList.contains('active')) {
+                    dislikeBtn.classList.remove('active');
+                } else {
+                    dislikeBtn.classList.add('active');
+                    likeBtn.classList.remove('active');
+                }
+            }
+        }
+
+        // ========== 工具菜单 ==========
+        function toggleToolsMenu() {
+            const btn = document.getElementById('aiToolsBtn');
+            const menu = document.getElementById('aiToolsMenu');
+            const isOpen = menu.classList.contains('show');
+            
+            if (isOpen) {
+                menu.classList.remove('show');
+                btn.classList.remove('active');
+            } else {
+                menu.classList.add('show');
+                btn.classList.add('active');
+            }
+        }
+
+        function selectTool(tool) {
+            // 关闭菜单
+            document.getElementById('aiToolsMenu').classList.remove('show');
+            document.getElementById('aiToolsBtn').classList.remove('active');
+            
+            if (tool === 'diagnose') {
+                startCardDiagnosis();
+            }
+        }
+
+        // 点击其他区域关闭工具菜单
+        document.addEventListener('click', function(e) {
+            const toolsContainer = document.querySelector('.ai-tools-container');
+            if (toolsContainer && !toolsContainer.contains(e.target)) {
+                document.getElementById('aiToolsMenu')?.classList.remove('show');
+                document.getElementById('aiToolsBtn')?.classList.remove('active');
+            }
+        });
+
+        // ========== Artifacts Canvas 门卡诊断功能 ==========
+        
+        // 开启门卡诊断（从欢迎页或对话触发）
+        function startCardDiagnosis() {
+            const panel = document.getElementById('aiPanel');
+            const welcome = document.getElementById('aiWelcome');
+            const messages = document.getElementById('aiMessages');
+            const quickPrompts = document.querySelector('.quick-prompts');
+            
+            // 确保面板打开
+            if (!panel.classList.contains('show')) {
+                panel.classList.add('show');
+                document.getElementById('aiFloatBtn').classList.add('active');
+            }
+            
+            // 切换到对话模式
+            welcome.classList.add('hidden');
+            messages.classList.remove('hidden');
+            if (quickPrompts) quickPrompts.style.display = 'flex';
+            
+            // 打开 Canvas
+            panel.classList.add('canvas-mode');
+            resetCanvasStage('waiting');
+            
+            // 添加 AI 消息引导
+            addMessage('好的，诊断模式已开启。请将门卡放置在制卡机上，我会帮你分析。\n\n💡 也可以点击左侧“演示场景”快速查看不同问题类型。', 'ai');
+        }
+        
+        // 场景数据配置
+        const scenarioData = {
+            expired: {
+                status: 'error',
+                title: '卡片已过期',
+                room: '1208',
+                type: '宾客卡',
+                expiry: '12-21 12:00 (已过期2小时)',
+                lockStatus: '在线',
+                aiMessage: '🔴 诊断完成：**卡片已过期**\n\n- 房间号：1208\n- 卡类型：宾客卡\n- 过期时间：今天 12:00（已过期2小时）\n\n建议：请前往【制卡/发卡】模块为客人延期或重制门卡，并重新验证开门。'
+            },
+            lost: {
+                status: 'error',
+                title: '卡片已挂失',
+                room: '0815',
+                type: '宾客卡',
+                expiry: '12-23 14:00',
+                lockStatus: '在线',
+                lockStatusClass: '',
+                aiMessage: '🔴 诊断完成：**卡片已挂失**\n\n- 房间号：0815\n- 卡类型：宾客卡\n- 挂失时间：今天 09:30\n\n建议：此卡已禁用，请前往【制卡/发卡】模块重制新卡，并回收旧卡。'
+            },
+            offline: {
+                status: 'warning',
+                title: '门锁离线',
+                room: '0502',
+                type: '宾客卡',
+                expiry: '12-22 12:00',
+                lockStatus: '离线 (2小时)',
+                lockStatusClass: 'warning',
+                aiMessage: '🟡 诊断完成：**门锁离线**\n\n- 房间号：0502\n- 卡片状态：有效\n- 门锁状态：离线已 2 小时\n\n建议：请在【设备管理】检查门锁在线状态/网关通信，必要时通知工程人员现场处理。'
+            },
+            lowbattery: {
+                status: 'warning',
+                title: '门锁低电量',
+                room: '1015',
+                type: '宾客卡',
+                expiry: '12-24 11:00',
+                lockStatus: '电量 8%',
+                lockStatusClass: 'warning',
+                aiMessage: '🟡 诊断完成：**门锁低电量**\n\n- 房间号：1015\n- 卡片状态：有效\n- 门锁电量：8%（需尽快更换）\n\n建议：尽快更换门锁电池并复测；如仍失败，再复核门锁通信与权限同步。'
+            },
+            normal: {
+                status: 'success',
+                title: '卡片正常',
+                room: '0903',
+                type: '宾客卡',
+                expiry: '12-25 14:00',
+                lockStatus: '在线正常',
+                lockStatusClass: 'success',
+                aiMessage: '🟢 诊断完成：**卡片正常**\n\n- 房间号：0903\n- 卡类型：宾客卡\n- 有效期：12-25 14:00\n- 门锁状态：在线正常\n\n建议：指导客人正确刷卡/插卡；如仍无法开门，可尝试重制门卡并再次验证。'
+            },
+            replaced: {
+                status: 'error',
+                title: '旧卡已被替换',
+                room: '0712',
+                type: '宾客卡',
+                expiry: '已失效',
+                lockStatus: '在线',
+                lockStatusClass: '',
+                aiMessage: '🔴 诊断完成：**旧卡已被替换**\n\n- 房间号：0712\n- 当前卡：已失效（被新卡覆盖）\n- 最新制卡：今天 10:32（操作员：张前台）\n\n**证据**：同一房间在 10:32 又制作了一张新卡，系统设置为"补卡终止旧卡"，因此旧卡已失效。\n\n建议：请核对客人手中卡片是否为最新制作的那张（按制卡时间/卡号核对）；确认后回房重试。'
+            },
+            syncpending: {
+                status: 'warning',
+                title: '权限同步中',
+                room: '0318',
+                type: '宾客卡',
+                expiry: '12-24 12:00',
+                lockStatus: 'ZigBee 同步中',
+                lockStatusClass: 'warning',
+                aiMessage: '🟡 诊断完成：**权限同步延迟**\n\n- 房间号：0318\n- 卡片状态：有效\n- 门锁状态：ZigBee 在线\n- 下发队列：存在未完成命令\n\n**证据**：系统检测到仍有未完成的下发命令（队列积压），可能导致门锁端权限尚未更新。\n\n建议：请稍等 1-2 分钟后让客人重试；如仍失败，在【设备管理】确认网关/门锁在线状态，恢复链路后点击"重新分析"验证。不建议反复重制卡（可能触发旧卡失效，问题更复杂）。'
+            }
+        };
+        
+        // 点击演示场景按钮
+        function simulateScenario(scenario) {
+            resetCanvasStage('analyzing');
+            
+            // 重置步骤状态
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById('step' + i);
+                step.classList.remove('active', 'done');
+            }
+            
+            // 逐步执行动画
+            let stepIndex = 0;
+            const runStep = () => {
+                if (stepIndex < 4) {
+                    // 当前步骤设为active
+                    const currentStep = document.getElementById('step' + (stepIndex + 1));
+                    currentStep.classList.add('active');
+                    
+                    setTimeout(() => {
+                        // 当前步骤完成
+                        currentStep.classList.remove('active');
+                        currentStep.classList.add('done');
+                        stepIndex++;
+                        runStep();
+                    }, 600);
+                } else {
+                    // 全部完成，显示结果
+                    setTimeout(() => {
+                        showDiagnosisResult(scenario);
+                    }, 300);
+                }
+            };
+            runStep();
+        }
+        
+        // 关闭 Canvas
+        function closeCanvas() {
+            const panel = document.getElementById('aiPanel');
+            panel.classList.remove('canvas-mode');
+        }
+        
+        // 重置 Canvas 到指定阶段
+        function resetCanvasStage(stage) {
+            const stages = ['canvasWaiting', 'canvasAnalyzing', 'canvasResult'];
+            stages.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('active');
+            });
+            const target = document.getElementById('canvas' + stage.charAt(0).toUpperCase() + stage.slice(1));
+            if (target) target.classList.add('active');
+        }
+        
+        // 重置诊断（重新开始）
+        function resetCanvas() {
+            resetCanvasStage('waiting');
+            addMessage('请放置新的卡片进行诊断，或点击"演示场景"查看其他诊断结果。', 'ai');
+        }
+        
+        // 模拟检测到卡片（实际由硬件回调）- 用于真实场景
+        function simulateCardDetected() {
+            simulateScenario('expired'); // 默认演示过期场景
+        }
+        
+        // 显示诊断结果
+        function showDiagnosisResult(scenario = 'expired') {
+            const data = scenarioData[scenario] || scenarioData.expired;
+            
+            // 更新 Canvas 结果卡片
+            const header = document.getElementById('resultHeader');
+            const title = document.getElementById('resultTitle');
+            const lockEl = document.getElementById('resLock');
+            
+            header.className = 'result-header ' + data.status;
+            title.textContent = data.title;
+            
+            document.getElementById('resRoom').textContent = data.room;
+            document.getElementById('resType').textContent = data.type;
+            document.getElementById('resExpiry').textContent = data.expiry;
+            lockEl.textContent = data.lockStatus;
+            lockEl.className = 'result-value ' + (data.lockStatusClass || '');
+            
+            // 切换到结果阶段
+            resetCanvasStage('result');
+            
+            // 同步到对话区
+            addMessage(data.aiMessage, 'ai');
+        }
+        
+        // ========== 原有对话功能 ==========
+
+        // 从欢迎页开始对话
+        function startChat(text) {
+            const welcome = document.getElementById('aiWelcome');
+            const messages = document.getElementById('aiMessages');
+            const quickPrompts = document.querySelector('.quick-prompts');
+            
+            // 隐藏欢迎页，显示对话区
+            welcome.classList.add('hidden');
+            messages.classList.remove('hidden');
+            if (quickPrompts) quickPrompts.style.display = 'flex';
+            
+            // 发送用户消息
+            addMessage(text, 'user');
+            
+            // 模拟 AI 回复
+            setTimeout(() => {
+                addMessage('我正在处理您的问题：「' + text + '」，请稍候...', 'ai');
+            }, 500);
+        }
+
+        // 模拟知识库问答
+        const faqKnowledge = {
+            '健身房': '酒店健身房位于 **3楼**，开放时间为 **6:00-22:00**。\n\n🔑 **进入方式**：使用您的房卡在健身房门口刷卡即可进入，系统会自动验证您的入住状态。\n\n💡 **温馨提示**：\n- 请穿着运动服装和运动鞋\n- 健身房内提供免费矿泉水和毛巾\n- 如需私教服务请提前预约',
+            '游泳池': '酒店游泳池位于 **5楼**，开放时间为 **7:00-21:00**。\n\n🔑 **进入方式**：使用房卡在泳池入口刷卡进入。\n\n⚠️ **注意事项**：\n- 请佩戴泳帽\n- 12岁以下儿童需成人陪同\n- 泳池深度1.2m-1.8m',
+            '早餐': '酒店早餐在 **2楼全日餐厅** 供应。\n\n⏰ **供应时间**：\n- 周一至周五：6:30-10:00\n- 周末及节假日：6:30-10:30\n\n💰 **价格**：\n- 住客优惠价：¥68/位\n- 门市价：¥98/位\n\n🍽️ 提供中西式自助餐，约80+菜品',
+            'wifi': '酒店全覆盖免费 WiFi。\n\n📶 **连接方式**：\n1. 搜索网络名称：**Hotel-Guest**\n2. 打开浏览器，输入房间号和手机尾号4位验证\n3. 验证成功后即可使用\n\n💡 如遇连接问题，可拨打前台 **8888** 寻求帮助',
+            '退房': '退房时间为 **中午12:00**。\n\n⏰ **延迟退房**：\n- 12:00-14:00：免费（视房态）\n- 14:00-18:00：加收半天房费\n- 18:00后：加收全天房费\n\n📍 请将房卡交还前台，我们会为您办理退房手续',
+            '停车': '酒店提供 **地下停车场**，入口在酒店东侧。\n\n🚗 **收费标准**：\n- 住客：免费（凭房卡）\n- 访客：¥10/小时，¥60封顶\n\n💡 出场时在收费处出示房卡即可免费离场',
+            '门锁': '如遇房卡无法开门，请尝试以下步骤：\n\n1️⃣ 确认房卡是否正确插入/靠近感应区\n2️⃣ 检查房卡是否过期（可在前台查询）\n3️⃣ 尝试重新插拔房卡\n\n如仍无法解决，请拨打前台 **8888**，我们会立即派工程人员协助。\n\n⚠️ 请勿将房卡与手机、磁铁等放在一起，可能导致消磁',
+            '洗衣': '酒店提供洗衣服务。\n\n👔 **送洗方式**：\n1. 填写房间内的洗衣单\n2. 将衣物放入洗衣袋\n3. 拨打 **8866** 通知客房服务收取\n\n⏰ **取衣时间**：\n- 普通服务：次日18:00前\n- 加急服务：当日取（加收50%费用）'
+        };
+
+        function getAIResponse(question) {
+            const q = question.toLowerCase();
+            
+            // 匹配关键词
+            for (const [keyword, answer] of Object.entries(faqKnowledge)) {
+                if (q.includes(keyword.toLowerCase())) {
+                    return answer;
+                }
+            }
+            
+            // 未匹配到的默认回复
+            if (q.includes('你好') || q.includes('在吗')) {
+                return '你好！我是 HostPilot，您的智能酒店助手。有什么可以帮您的吗？\n\n您可以问我关于：\n- 🏊 酒店设施（健身房、游泳池等）\n- 🍳 餐饮服务\n- 🔑 房卡/门锁问题\n- 🚗 停车指引\n- ⏰ 入住/退房时间';
+            }
+            
+            return '抱歉，我暂时无法回答这个问题。\n\n您可以尝试：\n- 换个方式描述您的问题\n- 拨打前台电话 **8888** 咨询\n\n💡 我可以回答关于酒店设施、服务时间、房卡使用等问题';
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 保存用户消息用于重试
+            lastUserMessage = text;
+
+            // 如果欢迎页还在显示，先切换到对话模式
+            const welcome = document.getElementById('aiWelcome');
+            if (welcome && !welcome.classList.contains('hidden')) {
+                welcome.classList.add('hidden');
+                document.getElementById('aiMessages').classList.remove('hidden');
+                document.querySelector('.quick-prompts').style.display = 'flex';
+            }
+
+            addMessage(text, 'user');
+            input.value = '';
+
+            // 模拟 AI 回复（带打字效果延迟）
+            setTimeout(() => {
+                const response = getAIResponse(text);
+                addMessage(response, 'ai');
+            }, 800);
+        }
+
+        // 添加消息
+        function addMessage(text, type) {
+            const messages = document.getElementById('aiMessages');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + type;
+            // 简单的 Markdown 转 HTML
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // 加粗
+                .replace(/\n/g, '<br>');  // 换行
+            
+            msgDiv.innerHTML = `
+                <div class="message-bubble">${formattedText}</div>
+                <div class="message-time">${timeStr}</div>
+            `;
+            messages.appendChild(msgDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // 快捷提问
+        function sendQuickPrompt(text) {
+            document.getElementById('aiInput').value = text;
+            sendMessage();
+        }
+
+        // 重试上一条消息
+        let lastUserMessage = '';
+        function retryLastMessage() {
+            if (lastUserMessage) {
+                document.getElementById('aiInput').value = lastUserMessage;
+                sendMessage();
+            }
+        }
+
+        // 按键处理
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // 监听 iframe 内的导航请求
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'navigate') {
+                closeNotifyPanel();
+                document.getElementById('mainFrame').src = event.data.url;
+            }
+            if (event.data && event.data.type === 'openAI') {
+                toggleAI();
+            }
+            if (event.data && event.data.type === 'toggleNotify') {
+                toggleNotifyPanel();
+            }
+            if (event.data && event.data.type === 'closeNotify') {
+                closeNotifyPanel();
+            }
+            if (event.data && event.data.type === 'requestNotifyCount') {
+                sendNotifyCountTo(event.source);
+            }
+        });
+
+        // 通知面板（由 iframe 内顶部栏铃铛触发）
+        const notifyState = {
+            filter: 'unread',
+            items: [
+                { id: 'n1', module: '安全运维', level: 'urgent', title: '网关 GW-02 离线 4 小时，影响 28 台设备', meta: '建议优先恢复网关通信', time: '2025/12/11 10:12', url: 'security-ops-dashboard.html', unread: true },
+                { id: 'n2', module: '前厅运营', level: 'warning', title: '超时未退房 3 间：0305 / 0402 / 0608', meta: '建议尽快联系确认续住或退房', time: '2025/12/11 10:05', url: 'front-office-dashboard.html', unread: true },
+                { id: 'n3', module: '安全运维', level: 'warning', title: '低电量设备 8 台（0402 8%、1008 15%）', meta: '建议优先更换 <10% 设备电池', time: '2025/12/11 09:58', url: 'security-ops-dashboard.html', unread: true },
+                { id: 'n4', module: '数据总览', level: 'info', title: '门未关告警平均响应 4.2 分钟（较上周 +18%）', meta: '建议复核值守与告警触达效率', time: '2025/12/11 09:42', url: 'overview-dashboard.html', unread: true },
+                { id: 'n5', module: '安全运维', level: 'urgent', title: '0815 房触发“飞房”告警，且同时设备离线', meta: '建议立即现场核查排除误报/风险', time: '2025/12/11 09:30', url: 'security-ops-dashboard.html', unread: true },
+                { id: 'n6', module: '前厅运营', level: 'info', title: '预计入住高峰 17:00-19:00，尚有 18 间预抵', meta: '建议提前安排前台人手与制卡准备', time: '2025/12/11 09:15', url: 'front-office-dashboard.html', unread: false },
+                { id: 'n7', module: '前厅运营', level: 'warning', title: '双床房入住率 84%，建议平衡推荐大床房（75%）', meta: '避免后续房型紧张导致调房', time: '2025/12/11 09:10', url: 'front-office-dashboard.html', unread: false },
+                { id: 'n8', module: '安全运维', level: 'warning', title: '3F 开门失败率 8.5%（全店均值 3.2%）', meta: '疑似网关/信号问题导致集中失败', time: '2025/12/11 09:02', url: 'security-ops-dashboard.html', unread: false },
+                { id: 'n9', module: '数据总览', level: 'info', title: '入住→首次开门平均间隔 12.6 分钟', meta: '建议关注制卡到客房引导流程', time: '2025/12/11 08:55', url: 'overview-dashboard.html', unread: false },
+                { id: 'n10', module: '安全运维', level: 'info', title: '新增安全事件：尾随告警 1 起（5F）', meta: '建议复核视频/巡查记录', time: '2025/12/11 08:41', url: 'security-ops-dashboard.html', unread: false },
+                { id: 'n11', module: '前厅运营', level: 'warning', title: '预抵客房仍未完成房态准备：12 层 6 间', meta: '建议协调清洁排班/优先打扫', time: '2025/12/11 08:35', url: 'front-office-dashboard.html', unread: false },
+                { id: 'n12', module: '安全运维', level: 'info', title: '设备异常率较上周 +12%（集中 3F/5F）', meta: '建议重点巡检楼层与网关稳定性', time: '2025/12/11 08:20', url: 'security-ops-dashboard.html', unread: false },
+                { id: 'n13', module: '数据总览', level: 'info', title: '退房→空净平均耗时 28 分钟（目标 ≤25 分钟）', meta: '建议优化清洁调度与验房节奏', time: '2025/12/11 08:05', url: 'overview-dashboard.html', unread: false },
+                { id: 'n14', module: '安全运维', level: 'warning', title: '问题设备：离线 2 台 / 低电量 8 台', meta: '建议先处理离线，再处理 <20% 电量', time: '2025/12/11 07:50', url: 'security-ops-dashboard.html', unread: false },
+                { id: 'n15', module: '前厅运营', level: 'info', title: '今日房态变更频繁：退房 12 / 入住 18', meta: '建议关注高峰期办理效率', time: '2025/12/11 07:40', url: 'front-office-dashboard.html', unread: false },
+                { id: 'n16', module: '安全运维', level: 'warning', title: '实时事件流：门未关告警 2 起（10 分钟内）', meta: '建议提醒巡楼/复核房门状态', time: '2025/12/11 07:35', url: 'security-ops-dashboard.html', unread: false },
+                { id: 'n17', module: '数据总览', level: 'info', title: '超时退房占比 6.8%（较昨日 +1.2pp）', meta: '建议加强退房提醒与流程', time: '2025/12/11 07:20', url: 'overview-dashboard.html', unread: false },
+                { id: 'n18', module: '安全运维', level: 'info', title: '网关在线率 98.6%（正常）', meta: '持续监控弱信号网关', time: '2025/12/11 07:10', url: 'security-ops-dashboard.html', unread: false }
+            ]
+        };
+
+        function toggleNotifyPanel() {
+            const panel = document.getElementById('notifyPanel');
+            panel.classList.toggle('show');
+            if (panel.classList.contains('show')) {
+                renderNotifyList();
+            }
+        }
+
+        function closeNotifyPanel() {
+            const panel = document.getElementById('notifyPanel');
+            panel.classList.remove('show');
+        }
+
+        function setNotifyFilter(filter) {
+            notifyState.filter = filter;
+            document.getElementById('notifyFilterAll').classList.toggle('active', filter === 'all');
+            document.getElementById('notifyFilterUnread').classList.toggle('active', filter === 'unread');
+            renderNotifyList();
+        }
+
+        function markAllRead() {
+            notifyState.items.forEach(i => (i.unread = false));
+            renderNotifyList();
+        }
+
+        function getUnreadCount() {
+            return notifyState.items.filter(i => i.unread).length;
+        }
+
+        function sendNotifyCountTo(targetWindow) {
+            if (!targetWindow) return;
+            targetWindow.postMessage({ type: 'notifyCount', count: getUnreadCount() }, '*');
+        }
+
+        function broadcastNotifyCount() {
+            const count = getUnreadCount();
+            const frame = document.getElementById('mainFrame');
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({ type: 'notifyCount', count }, '*');
+            }
+        }
+
+        function renderNotifyList() {
+            const list = document.getElementById('notifyList');
+            const items = notifyState.filter === 'unread'
+                ? notifyState.items.filter(i => i.unread)
+                : notifyState.items;
+
+            if (items.length === 0) {
+                list.innerHTML = '<div class="notify-empty">暂无' + (notifyState.filter === 'unread' ? '未读' : '') + '通知</div>';
+            } else {
+                list.innerHTML = items.map(i => {
+                    const levelText = i.level === 'urgent' ? '紧急' : (i.level === 'warning' ? '警告' : '提示');
+                    return (
+                        '<div class="notify-item ' + (i.unread ? 'unread' : '') + '" onclick="openNotify(\'' + i.id + '\')">'
+                        +   '<div class="notify-row">'
+                        +     '<span class="notify-dot"></span>'
+                        +     '<span class="notify-pill">' + i.module + '</span>'
+                        +     '<span class="notify-level ' + i.level + '">' + levelText + '</span>'
+                        +   '</div>'
+                        +   '<div class="notify-title" style="margin-top:6px">' + i.title + '</div>'
+                        +   (i.meta ? '<div class="meta">' + i.time + ' · ' + i.meta + '</div>' : '<div class="meta">' + i.time + '</div>')
+                        + '</div>'
+                    );
+                }).join('');
+            }
+
+            // 未读数同步到 iframe 顶部铃铛
+            broadcastNotifyCount();
+        }
+
+        function openNotify(id) {
+            const item = notifyState.items.find(i => i.id === id);
+            if (!item) return;
+            // “点进详情才算已读”：打开详情弹窗即视为进入详情
+            item.unread = false;
+            closeNotifyPanel();
+            broadcastNotifyCount();
+            showNotifyDetail(item);
+        }
+
+        let currentNotifyDetailId = null;
+        function showNotifyDetail(item) {
+            currentNotifyDetailId = item?.id || null;
+
+            const overlay = document.getElementById('notifyDetailOverlay');
+            const moduleEl = document.getElementById('notifyDetailModule');
+            const levelEl = document.getElementById('notifyDetailLevel');
+            const timeEl = document.getElementById('notifyDetailTime');
+            const titleEl = document.getElementById('notifyDetailTitle');
+            const metaEl = document.getElementById('notifyDetailMeta');
+            const goBtn = document.getElementById('notifyDetailGoBtn');
+
+            if (!overlay || !moduleEl || !levelEl || !timeEl || !titleEl || !metaEl || !goBtn) return;
+
+            const levelText = item.level === 'urgent' ? '紧急' : (item.level === 'warning' ? '警告' : '提示');
+
+            moduleEl.textContent = item.module || '-';
+            levelEl.textContent = levelText;
+            levelEl.className = 'notify-level ' + (item.level || 'info');
+            timeEl.textContent = item.time || '-';
+            titleEl.textContent = item.title || '-';
+            metaEl.textContent = item.meta || '—';
+
+            // 没有目标页面时隐藏“前往”按钮
+            goBtn.style.display = item.url ? 'inline-flex' : 'none';
+
+            overlay.classList.add('show');
+        }
+
+        function closeNotifyDetail() {
+            currentNotifyDetailId = null;
+            const overlay = document.getElementById('notifyDetailOverlay');
+            if (overlay) overlay.classList.remove('show');
+        }
+
+        function goNotifyDetailTarget() {
+            if (!currentNotifyDetailId) return;
+            const item = notifyState.items.find(i => i.id === currentNotifyDetailId);
+            if (!item || !item.url) return;
+            closeNotifyDetail();
+            document.getElementById('mainFrame').src = item.url;
+        }
+
+        // 首次初始化：推送一次未读数（用于默认页面角标）
+        window.addEventListener('load', function() {
+            broadcastNotifyCount();
+        });
+
+        // 修复：iframe 页面每次加载/切换后，重新推送未读数
+        (function bindNotifyCountToFrameLoad() {
+            const frame = document.getElementById('mainFrame');
+            if (!frame) return;
+            frame.addEventListener('load', function() {
+                closeNotifyPanel();
+                broadcastNotifyCount();
+            });
+
+            // 兜底：避免外层 load 早于 iframe 完成导致角标仍是默认值
+            setTimeout(() => broadcastNotifyCount(), 0);
+        })();
+
+        function openNotifySettings() {
+            alert('即将打开通知设置（邮件通知/规则配置）...');
+        }
+
+        // 点击空白处关闭通知面板（延迟执行，避免与铃铛点击冲突）
+        let notifyJustOpened = false;
+        const origToggleNotifyPanel = toggleNotifyPanel;
+        toggleNotifyPanel = function() {
+            const panel = document.getElementById('notifyPanel');
+            const wasHidden = !panel.classList.contains('show');
+            origToggleNotifyPanel();
+            if (wasHidden && panel.classList.contains('show')) {
+                notifyJustOpened = true;
+                setTimeout(() => { notifyJustOpened = false; }, 100);
+            }
+        };
+        document.addEventListener('click', function(e) {
+            if (notifyJustOpened) return;
+            const panel = document.getElementById('notifyPanel');
+            if (!panel.classList.contains('show')) return;
+            if (panel.contains(e.target)) return;
+            panel.classList.remove('show');
+        });
+
+        // ESC 关闭通知详情弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+            const overlay = document.getElementById('notifyDetailOverlay');
+            if (overlay && overlay.classList.contains('show')) {
+                closeNotifyDetail();
+            }
+        });
+    </script>
+</body>
+</html>

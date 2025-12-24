@@ -1,0 +1,2487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Lock Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Main Content iframe */
+        .main-frame {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+
+        .notify-panel {
+            position: fixed;
+            top: 68px;
+            right: 18px;
+            width: 360px;
+            max-width: calc(100vw - 36px);
+            background: #ffffff;
+            border: 1px solid rgba(26, 42, 74, 0.22);
+            border-radius: 14px;
+            overflow: hidden;
+            z-index: 10002;
+            display: none;
+            background-clip: padding-box;
+            box-shadow:
+                0 18px 48px rgba(0,0,0,0.18),
+                0 0 0 1px rgba(26, 42, 74, 0.10);
+        }
+
+        .notify-panel.show {
+            display: block;
+        }
+
+        .notify-header {
+            padding: 12px 14px;
+            background: linear-gradient(90deg, #1a2a4a 0%, #233556 100%);
+            color: #c9a961;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .notify-header .title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .notify-header button {
+            border: none;
+            background: rgba(255,255,255,0.10);
+            color: #c9a961;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .notify-header button:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        .notify-controls {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid rgba(26, 42, 74, 0.10);
+            background: #ffffff;
+        }
+
+        .notify-seg {
+            border: 1px solid rgba(26, 42, 74, 0.12);
+            background: rgba(26, 42, 74, 0.04);
+            color: #1a2a4a;
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .notify-seg:hover {
+            background: rgba(26, 42, 74, 0.06);
+        }
+
+        .notify-seg.active {
+            background: #c9a961;
+            border-color: rgba(201, 169, 97, 0.65);
+            color: #1a2a4a;
+            font-weight: 700;
+        }
+
+        .notify-controls .spacer {
+            flex: 1;
+        }
+
+        .notify-link {
+            border: none;
+            background: transparent;
+            color: #1a2a4a;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 6px 6px;
+            border-radius: 8px;
+        }
+
+        .notify-link:hover {
+            background: rgba(26, 42, 74, 0.05);
+        }
+
+        .notify-list {
+            max-height: 420px;
+            overflow: auto;
+            padding: 10px;
+            background: #ffffff;
+        }
+
+        .notify-item {
+            padding: 10px 12px;
+            border: 1px solid rgba(26, 42, 74, 0.14);
+            color: #333;
+            cursor: pointer;
+            background: #ffffff;
+            border-left: 3px solid transparent;
+            border-radius: 12px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+        }
+
+        .notify-item + .notify-item {
+            margin-top: 10px;
+        }
+
+        .notify-item.unread {
+            border-left-color: rgba(201, 169, 97, 0.95);
+        }
+
+        .notify-item:hover {
+            border-color: rgba(26, 42, 74, 0.22);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.12);
+        }
+
+        .notify-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notify-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            flex-shrink: 0;
+        }
+
+        .notify-item.unread .notify-dot {
+            background: #c9a961;
+        }
+
+        .notify-pill {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(26, 42, 74, 0.08);
+            color: #1a2a4a;
+            flex-shrink: 0;
+        }
+
+        .notify-level {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.06);
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        .notify-level.urgent { background: rgba(244, 67, 54, 0.12); color: #b71c1c; }
+        .notify-level.warning { background: rgba(255, 152, 0, 0.14); color: #a35b00; }
+        .notify-level.info { background: rgba(33, 150, 243, 0.12); color: #0d47a1; }
+
+        .notify-title {
+            font-size: 13px;
+            color: #111;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .notify-item .meta {
+            margin-top: 6px;
+            font-size: 11px;
+            color: #6b7280;
+            line-height: 1.35;
+        }
+
+        .notify-empty {
+            padding: 26px 14px;
+            color: #6b7280;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        /* Notification Detail Modal */
+        .notify-detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 10010;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .notify-detail-overlay.show {
+            display: flex;
+        }
+
+        .notify-detail-modal {
+            width: 560px;
+            max-width: calc(100vw - 36px);
+            background: #ffffff;
+            border: 1px solid rgba(26, 42, 74, 0.18);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow:
+                0 20px 60px rgba(0,0,0,0.22),
+                0 0 0 1px rgba(26, 42, 74, 0.10);
+        }
+
+        .notify-detail-header {
+            padding: 12px 14px;
+            background: linear-gradient(90deg, #1a2a4a 0%, #233556 100%);
+            color: #c9a961;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .notify-detail-header .title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+
+        .notify-detail-close {
+            border: none;
+            background: rgba(255,255,255,0.10);
+            color: #c9a961;
+            width: 30px;
+            height: 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .notify-detail-close:hover {
+            background: rgba(255,255,255,0.14);
+        }
+
+        .notify-detail-body {
+            padding: 14px;
+        }
+
+        .notify-detail-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .notify-detail-time {
+            color: rgba(26, 42, 74, 0.70);
+            font-size: 12px;
+        }
+
+        .notify-detail-title {
+            font-size: 16px;
+            color: #111;
+            font-weight: 700;
+            line-height: 1.35;
+            margin-bottom: 10px;
+        }
+
+        .notify-detail-meta {
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .notify-detail-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 12px 14px;
+            border-top: 1px solid rgba(26, 42, 74, 0.10);
+            background: #ffffff;
+        }
+
+        .notify-detail-actions button {
+            border: none;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .notify-detail-actions .btn-secondary {
+            background: rgba(26, 42, 74, 0.06);
+            color: #1a2a4a;
+        }
+
+        .notify-detail-actions .btn-secondary:hover {
+            background: rgba(26, 42, 74, 0.08);
+        }
+
+        .notify-detail-actions .btn-primary {
+            background: #c9a961;
+            color: #1a2a4a;
+            font-weight: 700;
+        }
+
+        .notify-detail-actions .btn-primary:hover {
+            filter: brightness(0.98);
+        }
+
+        /* Floating Action Button */
+        .ai-float-btn {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(201, 169, 97, 0.4);
+            z-index: 10001;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ai-float-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 24px rgba(201, 169, 97, 0.5);
+        }
+
+        .ai-float-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ai-float-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: #1a2a4a;
+            transition: transform 0.3s ease;
+        }
+
+        .ai-float-btn.active {
+            background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
+            box-shadow: 0 4px 16px rgba(26, 42, 74, 0.4);
+        }
+
+        .ai-float-btn.active svg {
+            fill: #c9a961;
+            transform: rotate(90deg);
+        }
+
+        .ai-float-btn .icon-chat { display: block; }
+        .ai-float-btn .icon-close { display: none; }
+        .ai-float-btn.active .icon-chat { display: none; }
+        .ai-float-btn.active .icon-close { display: block; }
+
+        /* AI Assistant Floating Panel */
+        .ai-panel {
+            position: fixed;
+            right: 30px;
+            bottom: 100px;
+            width: 480px;
+            height: 680px;
+            max-height: calc(100vh - 140px);
+            background: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            overflow: hidden;
+            z-index: 10000;
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transform-origin: bottom right;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ai-panel.show {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .ai-header {
+            background: linear-gradient(90deg, #1a2a4a 0%, #2a3a5a 100%);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-header h3 {
+            color: #c9a961;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-header h3 svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .ai-close {
+            color: #8899aa;
+            cursor: pointer;
+            font-size: 20px;
+            background: none;
+            border: none;
+        }
+
+        .ai-close:hover {
+            color: #ffffff;
+        }
+
+        .ai-expand {
+            color: #8899aa;
+            cursor: pointer;
+            font-size: 16px;
+            background: none;
+            border: none;
+            margin-right: 10px;
+        }
+
+        .ai-expand:hover {
+            color: #ffffff;
+        }
+
+        .ai-header-btns {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Expanded Mode */
+        .ai-panel.expanded {
+            right: 50%;
+            bottom: 50%;
+            transform: translate(50%, 50%) !important;
+            width: 900px;
+            height: 92vh;
+            max-height: 92vh;
+            transform-origin: center center;
+        }
+
+        .ai-panel.expanded.show {
+            transform: translate(50%, 50%) !important;
+        }
+
+        /* ========== Artifacts Canvas Mode ========== */
+        .ai-panel.canvas-mode {
+            width: 1100px;
+        }
+        .ai-panel-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .ai-canvas {
+            width: 380px;
+            min-width: 380px;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+            border-right: 1px solid #e0e0e0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .ai-panel.canvas-mode .ai-canvas {
+            display: flex;
+        }
+        .ai-chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 0;
+        }
+        .canvas-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.8);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .canvas-close-btn:hover {
+            background: #fff;
+            color: #333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .canvas-stage {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+        .canvas-stage.active {
+            display: flex;
+        }
+        /* Stage 1: Waiting */
+        .canvas-waiting .waiting-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            position: relative;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        .canvas-waiting .waiting-icon svg {
+            width: 56px;
+            height: 56px;
+            fill: white;
+        }
+        .canvas-waiting .pulse-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid #4F46E5;
+            border-radius: 24px;
+            animation: pulse-ring 2s ease-out infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.4); opacity: 0; }
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(79, 70, 229, 0.4); }
+            50% { box-shadow: 0 0 40px rgba(79, 70, 229, 0.6); }
+        }
+        .canvas-waiting h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin: 0 0 8px 0;
+        }
+        .canvas-waiting p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        /* Demo Scenarios - fixed at bottom */
+        .demo-scenarios {
+            padding: 16px;
+            border-top: 1px dashed #e0e0e0;
+            background: #fafafa;
+        }
+        .demo-scenarios .demo-title {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .demo-scenarios .demo-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+        }
+        .demo-scenarios .demo-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .demo-btn {
+            padding: 5px 10px;
+            border-radius: 14px;
+            border: none;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            background: #fff;
+            color: #666;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .demo-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .demo-btn.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .demo-btn.error:hover {
+            background: #ffcdd2;
+        }
+        .demo-btn.warning {
+            background: #fff8e1;
+            color: #f57c00;
+        }
+        .demo-btn.warning:hover {
+            background: #ffecb3;
+        }
+        .demo-btn.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .demo-btn.success:hover {
+            background: #c8e6c9;
+        }
+        /* Stage 2: Analyzing */
+        .canvas-analyzing .scan-animation {
+            width: 120px;
+            height: 80px;
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .canvas-analyzing .scan-card {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f0c14b 0%, #daa520 100%);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3);
+        }
+        .canvas-analyzing .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #3b82f6 50%, transparent 100%);
+            box-shadow: 0 0 10px #3b82f6;
+            animation: scan-move 1.5s ease-in-out infinite;
+        }
+        @keyframes scan-move {
+            0%, 100% { top: 0; }
+            50% { top: calc(100% - 3px); }
+        }
+        .canvas-analyzing h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin: 0 0 8px 0;
+        }
+        .canvas-analyzing .analyzing-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            text-align: left;
+            width: fit-content;
+        }
+        .canvas-analyzing .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #999;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .canvas-analyzing .step-item.active {
+            color: #333;
+        }
+        .canvas-analyzing .step-item.done {
+            color: #10b981;
+        }
+        .canvas-analyzing .step-icon {
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            min-height: 18px;
+            border: 2px solid #bbb;
+            border-radius: 50%;
+            background: #ddd;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        .canvas-analyzing .step-item.active .step-icon {
+            border: 2px solid #3b82f6;
+            border-top-color: transparent;
+            background: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+        .canvas-analyzing .step-item.done .step-icon {
+            background: #10b981;
+            border-color: #10b981;
+        }
+        .canvas-analyzing .step-item.done .step-icon::after {
+            content: '✓';
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* Stage 3: Result */
+        .canvas-result .result-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .canvas-result .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .canvas-result .result-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .canvas-result .result-icon.warning {
+            background: linear-gradient(135deg, #F59E0B, #F97316);
+        }
+        .canvas-result .result-icon.error {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+        }
+        .canvas-result .result-icon.success {
+            background: linear-gradient(135deg, #10B981, #059669);
+        }
+        .canvas-result .result-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+        .canvas-result .result-title {
+            flex: 1;
+        }
+        .canvas-result .result-title h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin: 0 0 4px 0;
+        }
+        .canvas-result .result-title p {
+            font-size: 12px;
+            color: #888;
+            margin: 0;
+        }
+        .canvas-result .result-details {
+            margin-bottom: 20px;
+        }
+        .canvas-result .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .canvas-result .detail-row:last-child {
+            border-bottom: none;
+        }
+        .canvas-result .detail-label {
+            color: #888;
+        }
+        .canvas-result .detail-value {
+            color: #333;
+            font-weight: 500;
+        }
+        .canvas-result .detail-value.expired {
+            color: #EF4444;
+        }
+        .canvas-result .result-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .canvas-result .action-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .canvas-result .action-btn.primary {
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            color: white;
+        }
+        .canvas-result .action-btn.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        .canvas-result .action-btn.secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+        .canvas-result .action-btn.secondary:hover {
+            background: #ebebeb;
+        }
+        /* Background Overlay for Expanded Mode */
+        .ai-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .ai-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .ai-messages {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+
+        .ai-messages.hidden {
+            display: none;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.user {
+            align-items: flex-end;
+        }
+
+        .message.ai {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 15px;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-bubble {
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            color: #1a2a4a;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai .message-bubble {
+            background: #ffffff;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* AI Message Bubble Container */
+        .message.ai .bubble-wrapper {
+            position: relative;
+            max-width: 85%;
+        }
+
+        .message.ai .bubble-wrapper .message-bubble {
+            max-width: 100%;
+        }
+
+        /* Like/Dislike Buttons - Outside Message Box Bottom Right */
+        .feedback-btns {
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .message.ai .bubble-wrapper:hover .feedback-btns {
+            opacity: 1;
+        }
+
+        .feedback-btn {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: rgba(0,0,0,0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .feedback-btn:hover {
+            background: rgba(0,0,0,0.1);
+        }
+
+        .feedback-btn svg {
+            width: 14px;
+            height: 14px;
+            fill: #999;
+        }
+
+        .feedback-btn:hover svg {
+            fill: #666;
+        }
+
+        .feedback-btn.active svg {
+            fill: #1a73e8;
+        }
+
+        .feedback-btn.active.dislike svg {
+            fill: #e53935;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* New Session Divider */
+        .new-session-divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .new-session-divider::before,
+        .new-session-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .new-session-divider span {
+            padding: 0 12px;
+            white-space: nowrap;
+        }
+
+        /* Data Card */
+        .data-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+
+        .data-card-header {
+            background: #f5f5f5;
+            padding: 10px 12px;
+            font-size: 13px;
+            color: #666;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-card table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .data-card th {
+            background: #1a2a4a;
+            color: #c9a961;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        .data-card td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .data-card tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-card-actions {
+            padding: 8px 12px;
+            background: #f9f9f9;
+            display: flex;
+            gap: 10px;
+        }
+
+        .data-card-actions button {
+            font-size: 12px;
+            padding: 4px 10px;
+            background: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .data-card-actions button:hover {
+            background: #f0f0f0;
+        }
+
+        /* Reference Citation */
+        .reference {
+            font-size: 12px;
+            color: #888;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            line-height: 1.8;
+        }
+
+        .reference-item {
+            display: block;
+            color: #666;
+        }
+
+        .reference a {
+            color: #1a2a4a;
+            text-decoration: none;
+        }
+
+        .reference a:hover {
+            text-decoration: underline;
+        }
+
+        /* Unable to Answer Style */
+        .unable-to-answer {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: #fffbf0;
+            border: 1px solid #ffe7ba;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 4px;
+        }
+
+        .unable-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .unable-text {
+            color: #8a6d3b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Rewrite Suggestions */
+        .ai-suggestions {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+
+        .suggestion-item {
+            color: #555;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        /* Retry Button */
+        .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            margin-left: 6px;
+            padding: 0;
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            transition: all 0.2s;
+            vertical-align: middle;
+        }
+
+        .retry-btn:hover {
+            color: #666;
+        }
+
+        .message-time {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Suggested Questions */
+        .suggested-questions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .suggested-question {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #f0f7ff;
+            border: 1px solid #d0e5ff;
+            border-radius: 16px;
+            color: #1a73e8;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .suggested-question:hover {
+            background: #e0efff;
+            border-color: #1a73e8;
+        }
+
+        /* Citation Number in Text */
+        .cite {
+            color: #1a73e8;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .cite:hover {
+            text-decoration: underline;
+        }
+
+        /* Quick Prompts */
+        .quick-prompts {
+            padding: 10px 15px;
+            background: #f0f0f0;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-prompts-title {
+            font-size: 12px;
+            color: #888;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .quick-prompts-list {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 8px;
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .quick-prompt {
+            font-size: 12px;
+            padding: 6px 12px;
+            background: #ffffff;
+            border: 1px solid #d0d0d0;
+            border-radius: 15px;
+            cursor: pointer;
+            color: #555;
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+
+        .quick-prompt:hover {
+            background: #c9a961;
+            border-color: #c9a961;
+            color: #1a2a4a;
+        }
+
+        /* Tools Menu */
+        .ai-tools-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .ai-tools-btn:hover {
+            background: #ebebeb;
+            border-color: #ccc;
+        }
+        .ai-tools-btn.active {
+            background: linear-gradient(135deg, #4F46E5, #7C3AED);
+            border-color: #4F46E5;
+        }
+        .ai-tools-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #666;
+            transition: all 0.3s;
+        }
+        .ai-tools-btn.active svg {
+            fill: white;
+            transform: rotate(45deg);
+        }
+        .ai-tools-menu {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 8px;
+            display: none;
+            min-width: 180px;
+            z-index: 100;
+        }
+        .ai-tools-menu.show {
+            display: block;
+            animation: fadeInUp 0.2s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .ai-tools-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .ai-tools-menu-item:hover {
+            background: linear-gradient(135deg, #f0f4ff 0%, #fff0f8 100%);
+            color: #6b4fbb;
+        }
+        .ai-tools-menu-item .tool-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .ai-tools-menu-item:nth-child(1) .tool-icon {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        .ai-tools-menu-item:nth-child(2) .tool-icon {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        /* Initial Welcome Page */
+        .ai-welcome {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 30px;
+            background: #f8f9fa;
+            text-align: center;
+        }
+
+        .ai-welcome.hidden {
+            display: none;
+        }
+
+        .ai-welcome-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #c9a961 0%, #a68a3a 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .ai-welcome-icon svg {
+            width: 32px;
+            height: 32px;
+            fill: #1a2a4a;
+        }
+
+        .ai-welcome-title {
+            font-size: 20px;
+            color: #c9a961;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .ai-welcome-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .ai-welcome-prompts {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .ai-welcome-prompt {
+            padding: 14px 20px;
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .ai-welcome-prompt:hover {
+            border-color: #c9a961;
+            background: linear-gradient(135deg, rgba(201,169,97,0.1) 0%, rgba(166,138,58,0.1) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        /* Input Area */
+        .ai-input-area {
+            padding: 15px;
+            background: #ffffff;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .ai-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .ai-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            min-height: 44px;
+            max-height: 120px;
+            font-family: inherit;
+        }
+
+        .ai-input:focus {
+            border-color: #c9a961;
+        }
+
+        .ai-send {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #1a2a4a 0%, #2a3a5a 100%);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ai-send svg {
+            width: 20px;
+            height: 20px;
+            fill: #c9a961;
+        }
+
+        .ai-send:hover {
+            background: linear-gradient(135deg, #2a3a5a 0%, #3a4a6a 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Content iframe -->
+    <iframe id="mainFrame" class="main-frame" src="main-en.html"></iframe>
+
+    <!-- Notification Panel -->
+    <div class="notify-panel" id="notifyPanel">
+        <div class="notify-header">
+            <div class="title">Notifications</div>
+            <button onclick="openNotifySettings()">Settings</button>
+        </div>
+        <div class="notify-controls">
+            <button class="notify-seg" id="notifyFilterAll" onclick="setNotifyFilter('all')">All</button>
+            <button class="notify-seg active" id="notifyFilterUnread" onclick="setNotifyFilter('unread')">Unread</button>
+            <div class="spacer"></div>
+            <button class="notify-link" onclick="markAllRead()">Mark all read</button>
+        </div>
+        <div class="notify-list" id="notifyList"></div>
+    </div>
+
+    <!-- Notification Detail Modal -->
+    <div class="notify-detail-overlay" id="notifyDetailOverlay" onclick="closeNotifyDetail()">
+        <div class="notify-detail-modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">
+            <div class="notify-detail-header">
+                <div class="title">Notification Details</div>
+                <button class="notify-detail-close" onclick="closeNotifyDetail()" aria-label="Close">×</button>
+            </div>
+            <div class="notify-detail-body">
+                <div class="notify-detail-badges">
+                    <span class="notify-pill" id="notifyDetailModule">-</span>
+                    <span class="notify-level info" id="notifyDetailLevel">Info</span>
+                    <span class="notify-detail-time" id="notifyDetailTime">-</span>
+                </div>
+                <div class="notify-detail-title" id="notifyDetailTitle">-</div>
+                <div class="notify-detail-meta" id="notifyDetailMeta">-</div>
+            </div>
+            <div class="notify-detail-actions">
+                <button class="btn-secondary" onclick="closeNotifyDetail()">Close</button>
+                <button class="btn-primary" id="notifyDetailGoBtn" onclick="goNotifyDetailTarget()">Go to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Overlay for Expanded Mode -->
+    <div class="ai-overlay" id="aiOverlay" onclick="toggleExpand()"></div>
+
+    <!-- AI Assistant Floating Panel -->
+    <div class="ai-panel" id="aiPanel">
+        <div class="ai-header">
+            <h3>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                HostPilot
+            </h3>
+            <div class="ai-header-btns">
+                <button class="ai-expand" id="aiExpandBtn" onclick="toggleExpand()" title="Expand/Collapse">
+                    <svg id="expandIcon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                    <svg id="shrinkIcon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="display:none"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>
+                </button>
+                <button class="ai-close" onclick="toggleAI()">×</button>
+            </div>
+        </div>
+
+        <!-- Panel Body (for Canvas mode layout) -->
+        <div class="ai-panel-body">
+            <!-- Canvas Area (Left side in Artifacts mode) -->
+            <div class="ai-canvas" id="aiCanvas">
+                <button class="canvas-close-btn" onclick="closeCanvas()">×</button>
+                
+                <!-- Stage 1: Waiting for Card -->
+                <div class="canvas-stage canvas-waiting active" id="canvasWaiting">
+                    <div class="waiting-icon">
+                        <div class="pulse-ring"></div>
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                    </div>
+                    <h3>Place Card</h3>
+                    <p>Please place the card on the encoder</p>
+                </div>
+
+                <!-- Stage 2: Analyzing -->
+                <div class="canvas-stage canvas-analyzing" id="canvasAnalyzing">
+                    <div class="scan-animation">
+                        <div class="scan-card"></div>
+                        <div class="scan-line"></div>
+                    </div>
+                    <h3>Analyzing card...</h3>
+                    <div class="analyzing-steps">
+                        <div class="step-item" id="step1">
+                            <span class="step-icon loading"></span>
+                            <span>Reading card info</span>
+                        </div>
+                        <div class="step-item" id="step2">
+                            <span class="step-icon"></span>
+                            <span>Checking validity</span>
+                        </div>
+                        <div class="step-item" id="step3">
+                            <span class="step-icon"></span>
+                            <span>Checking lock status</span>
+                        </div>
+                        <div class="step-item" id="step4">
+                            <span class="step-icon"></span>
+                            <span>Analyzing results</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage 3: Result -->
+                <div class="canvas-stage canvas-result" id="canvasResult">
+                    <div class="result-card">
+                        <div class="result-header">
+                            <div class="result-icon warning" id="resultIcon">
+                                <svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                            </div>
+                            <div class="result-title">
+                                <h4 id="resultTitle">Card Expired</h4>
+                                <p id="resultSubtitle">Detected an issue with the card</p>
+                            </div>
+                        </div>
+                        <div class="result-details" id="resultDetails">
+                            <div class="detail-row">
+                                <span class="detail-label">Card Type</span>
+                                <span class="detail-value">Guest Card</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Room</span>
+                                <span class="detail-value">8806</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Valid Until</span>
+                                <span class="detail-value expired">2025-01-10 (Expired)</span>
+                            </div>
+                        </div>
+                        <div class="result-actions">
+                            <button class="action-btn secondary" onclick="resetCanvas()">Re-analyze</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demo Scenarios at bottom -->
+                <div class="demo-scenarios">
+                    <div class="demo-title">Demo Scenarios</div>
+                    <div class="demo-buttons">
+                        <div class="demo-row">
+                            <button class="demo-btn error" onclick="simulateScenario('expired')">🔴 Expired</button>
+                            <button class="demo-btn error" onclick="simulateScenario('lost')">🔴 Lost</button>
+                            <button class="demo-btn error" onclick="simulateScenario('replaced')">🔴 Replaced</button>
+                        </div>
+                        <div class="demo-row">
+                            <button class="demo-btn warning" onclick="simulateScenario('offline')">🟡 Offline</button>
+                            <button class="demo-btn warning" onclick="simulateScenario('lowbattery')">🟡 Low Battery</button>
+                            <button class="demo-btn warning" onclick="simulateScenario('syncpending')">🟡 Sync Pending</button>
+                            <button class="demo-btn success" onclick="simulateScenario('normal')">🟢 Normal</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Area (Right side in Artifacts mode) -->
+            <div class="ai-chat-area">
+
+        <!-- Initial Welcome Page -->
+        <div class="ai-welcome" id="aiWelcome">
+            <div class="ai-welcome-icon">
+                <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            </div>
+            <div class="ai-welcome-title">Hello! I am HostPilot</div>
+            <div class="ai-welcome-subtitle">I can help you with questions about the lock system</div>
+            <div class="ai-welcome-prompts">
+                <div class="ai-welcome-prompt" onclick="startChat('How is the check-in status today?')">📊 How is the check-in status today?</div>
+                <div class="ai-welcome-prompt" onclick="startChat('Show me last month\'s reports')">📈 Show me last month's reports</div>
+                <div class="ai-welcome-prompt" onclick="startChat('How to set up QR code access?')">🔐 How to set up QR code access?</div>
+            </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div class="ai-messages hidden" id="aiMessages">
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        Hello! I am the Lock System AI Assistant. I can help you:
+                        <br>• Query access logs and report data
+                        <br>• Answer questions about lock operations
+                        <br>• Generate data analysis reports
+                        <br><br>How can I help you today?
+                    </div>
+                    <div class="feedback-btns">
+                        <button class="feedback-btn like" onclick="handleFeedback(this, 'like')" title="Helpful">
+                            <svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        </button>
+                        <button class="feedback-btn dislike" onclick="handleFeedback(this, 'dislike')" title="Not Helpful">
+                            <svg viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="message-time">17:06</div>
+            </div>
+
+            <div class="message user">
+                <div class="message-bubble">
+                    Which rooms have the highest failure rate in the last 7 days?
+                </div>
+                <div class="message-time">17:07</div>
+            </div>
+
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        Based on data from the last 7 days, the rooms with the highest failure rates are:
+                        
+                        <div class="data-card">
+                            <div class="data-card-header">📊 Top 5 Failure Rates (2025/11/22 - 11/28)</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Room No</th>
+                                        <th>Attempts</th>
+                                        <th>Failures</th>
+                                        <th>Rate</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>1208</td><td>45</td><td>8</td><td style="color:#e53935">17.8%</td></tr>
+                                    <tr><td>0915</td><td>38</td><td>5</td><td style="color:#e53935">13.2%</td></tr>
+                                    <tr><td>0703</td><td>52</td><td>6</td><td style="color:#ff9800">11.5%</td></tr>
+                                    <tr><td>1105</td><td>41</td><td>4</td><td style="color:#ff9800">9.8%</td></tr>
+                                    <tr><td>0812</td><td>33</td><td>3</td><td style="color:#ff9800">9.1%</td></tr>
+                                </tbody>
+                            </table>
+                            <div class="data-card-actions">
+                                <button>Export CSV</button>
+                                <button>View Details</button>
+                            </div>
+                        </div>
+
+                        <br>Room 1208 has the highest failure rate, mainly due to "Card Read Failure" (5 times) and "Lock Timeout" (3 times). Please check the lock status.
+                    </div>
+                    <div class="feedback-btns">
+                        <button class="feedback-btn like" onclick="handleFeedback(this, 'like')" title="Helpful">
+                            <svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        </button>
+                        <button class="feedback-btn dislike" onclick="handleFeedback(this, 'dislike')" title="Not Helpful">
+                            <svg viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="message-time">17:07</div>
+            </div>
+
+            <!-- New Session Divider -->
+            <div class="new-session-divider">
+                <span>New Session Below</span>
+            </div>
+
+            <div class="message user">
+                <div class="message-bubble">
+                    How often should lock batteries be replaced?
+                </div>
+                <div class="message-time">17:08</div>
+            </div>
+
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        Battery replacement cycle depends on usage frequency <span class="cite">[1]</span>:
+
+                        <br><br>• <b>Standard Room</b>: Approx. 12-18 months <span class="cite">[1]</span>
+                        <br>• <b>High Usage Room</b> (e.g., Gym, Public Area): Approx. 8-12 months <span class="cite">[1]</span>
+                        
+                        <br><br><b>Low Battery Warning</b>: When battery is below 20%, the system will alert automatically <span class="cite">[2]</span>. Please replace within 7 days.
+
+                        <br><br><b>Replacement Steps</b> <span class="cite">[3]</span>:
+                        <br>1. Open door with Admin Card
+                        <br>2. Open battery cover inside
+                        <br>3. Replace with 4 new AA batteries
+                        <br>4. Close cover and test with Admin Card
+
+                        <div class="reference">
+                            <span class="reference-item"><b>[1]</b> "Lock Maintenance Manual" v2.1; 2025/6/15; Ch.3 Battery Replacement</span>
+                            <span class="reference-item"><b>[2]</b> "System Alert Guide" v1.3; 2025/8/20; Sec.5 Low Battery</span>
+                            <span class="reference-item"><b>[3]</b> "Lock Installation Guide" v1.0; 2025/5/10; Ch.7 Daily Maintenance</span>
+                        </div>
+                    </div>
+                    <div class="feedback-btns">
+                        <button class="feedback-btn like" onclick="handleFeedback(this, 'like')" title="Helpful">
+                            <svg viewBox="0 0 24 24"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        </button>
+                        <button class="feedback-btn dislike" onclick="handleFeedback(this, 'dislike')" title="Not Helpful">
+                            <svg viewBox="0 0 24 24"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="message-time">17:08</div>
+            </div>
+
+            <!-- User Question: Unable to Answer -->
+            <div class="message user">
+                <div class="message-bubble">How to enter the gym?</div>
+                <div class="message-time">17:10</div>
+            </div>
+
+            <!-- AI Reply: No Match + Suggestions -->
+            <div class="message ai">
+                <div class="bubble-wrapper">
+                    <div class="message-bubble">
+                        <div class="unable-to-answer">
+                            <div class="unable-icon">
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="#f0ad4e"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                            </div>
+                            <div class="unable-text">Sorry, I cannot find information about "How to enter the gym" in the knowledge base.</div>
+                        </div>
+                        <p style="margin: 12px 0 8px; color: #666; font-size: 13px;">You can try asking:</p>
+                        <div class="ai-suggestions">
+                            <div class="suggestion-item">• How to open door with key card?</div>
+                            <div class="suggestion-item">• What to do if lock is offline?</div>
+                            <div class="suggestion-item">• List low battery locks</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="message-time">
+                    17:10
+                    <button class="retry-btn" onclick="retryLastMessage()" title="Retry">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Prompts -->
+        <div class="quick-prompts" style="display: none;">
+            <div class="quick-prompts-title">Quick Questions:</div>
+            <div class="quick-prompts-list">
+                <span class="quick-prompt" onclick="sendQuickPrompt('Check-in Status Today')">Check-in Status Today</span>
+                <span class="quick-prompt" onclick="sendQuickPrompt('Low Battery Locks')">Low Battery Locks</span>
+                <span class="quick-prompt" onclick="sendQuickPrompt('Abnormal Events')">Abnormal Events</span>
+                <span class="quick-prompt" onclick="sendQuickPrompt('Generate Daily Report')">Generate Daily Report</span>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="ai-input-area">
+            <div class="ai-input-wrapper">
+                <div class="ai-tools-container" style="position: relative;">
+                    <button class="ai-tools-btn" id="aiToolsBtn" onclick="toggleToolsMenu()">
+                        <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    </button>
+                    <div class="ai-tools-menu" id="aiToolsMenu">
+                        <div class="ai-tools-menu-item" onclick="selectTool('diagnose')">
+                            <span class="tool-icon">🔧</span>
+                            <span>Card Diagnosis</span>
+                        </div>
+                    </div>
+                </div>
+                <textarea class="ai-input" id="aiInput" placeholder="Type a question, press Enter to send..." rows="1" onkeydown="handleKeyDown(event)"></textarea>
+                <button class="ai-send" onclick="sendMessage()">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </button>
+            </div>
+        </div>
+
+            </div><!-- end ai-chat-area -->
+        </div><!-- end ai-panel-body -->
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="ai-float-btn" id="aiFloatBtn" onclick="toggleAI()">
+        <svg class="icon-chat" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h2v2H7zm4 0h2v2h-2zm4 0h2v2h-2z"/></svg>
+        <svg class="icon-close" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </div>
+
+    <script>
+        // Toggle AI Panel
+        function toggleAI() {
+            const panel = document.getElementById('aiPanel');
+            const btn = document.getElementById('aiFloatBtn');
+            const isOpen = panel.classList.contains('show');
+            
+            if (isOpen) {
+                panel.classList.remove('show');
+                btn.classList.remove('active');
+                // Close Canvas mode when closing panel
+                closeCanvas();
+            } else {
+                panel.classList.add('show');
+                btn.classList.add('active');
+                // Scroll to bottom
+                const messages = document.getElementById('aiMessages');
+                messages.scrollTop = messages.scrollHeight;
+            }
+        }
+
+        // ========== Tools Menu ==========
+        function toggleToolsMenu() {
+            const btn = document.getElementById('aiToolsBtn');
+            const menu = document.getElementById('aiToolsMenu');
+            const isOpen = menu.classList.contains('show');
+            
+            if (isOpen) {
+                menu.classList.remove('show');
+                btn.classList.remove('active');
+            } else {
+                menu.classList.add('show');
+                btn.classList.add('active');
+            }
+        }
+
+        function selectTool(tool) {
+            // Close menu
+            document.getElementById('aiToolsMenu').classList.remove('show');
+            document.getElementById('aiToolsBtn').classList.remove('active');
+            
+            if (tool === 'diagnose') {
+                startCardDiagnosis();
+            }
+        }
+
+        // Close tools menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const toolsContainer = document.querySelector('.ai-tools-container');
+            if (toolsContainer && !toolsContainer.contains(e.target)) {
+                document.getElementById('aiToolsMenu')?.classList.remove('show');
+                document.getElementById('aiToolsBtn')?.classList.remove('active');
+            }
+        });
+
+        // ========== Card Diagnosis - Artifacts Canvas Mode ==========
+        
+        // Scenario data configuration
+        const scenarioData = {
+            expired: {
+                status: 'warning',
+                icon: 'warning',
+                title: 'Card Expired',
+                subtitle: 'Card validity has ended',
+                type: 'Guest Card',
+                room: '8806',
+                expiry: '2025-01-10 (Expired)',
+                aiMessage: '🔴 Diagnosis complete: **Card Expired**\n\n- Room: 8806\n- Card Type: Guest Card\n- Expired: January 10, 2025\n\nSuggestion: Please extend or reissue the key card in the card issuing module, then re-test the door.'
+            },
+            lost: {
+                status: 'error',
+                icon: 'error',
+                title: 'Card Reported Lost',
+                subtitle: 'Card has been deactivated',
+                type: 'Guest Card',
+                room: '0815',
+                expiry: 'Deactivated (Lost)',
+                aiMessage: '🔴 Diagnosis complete: **Card Reported Lost**\n\n- Room: 0815\n- Card Type: Guest Card\n- Lost Report Time: Today 09:30\n\nSuggestion: This card is disabled. Please issue a new card in the card issuing module and recover the old card if possible.'
+            },
+            offline: {
+                status: 'warning',
+                icon: 'warning',
+                title: 'Lock Offline',
+                subtitle: 'Cannot sync with door lock',
+                type: 'Guest Card',
+                room: '0502',
+                expiry: '2025-01-15 (Valid)',
+                aiMessage: '🟡 Diagnosis complete: **Lock Offline**\n\n- Room: 0502\n- Card Status: Valid\n- Lock Status: Offline for 2 hours\n\nSuggestion: Please check device connectivity in Device Management (gateway/lock status). If needed, ask maintenance to inspect the lock on-site.'
+            },
+            lowbattery: {
+                status: 'warning',
+                icon: 'warning',
+                title: 'Low Battery',
+                subtitle: 'Lock battery needs replacement',
+                type: 'Guest Card',
+                room: '1015',
+                expiry: '2025-01-20 (Valid)',
+                aiMessage: '🟡 Diagnosis complete: **Low Battery**\n\n- Room: 1015\n- Card Status: Valid\n- Lock Battery: 8% (Replace soon)\n\nSuggestion: Replace the lock battery ASAP and re-test. If failures persist, verify lock connectivity and permission sync.'
+            },
+            normal: {
+                status: 'success',
+                icon: 'success',
+                title: 'Card Normal',
+                subtitle: 'No issues detected',
+                type: 'Guest Card',
+                room: '0903',
+                expiry: '2025-01-25 14:00',
+                aiMessage: '🟢 Diagnosis complete: **Card Normal**\n\n- Room: 0903\n- Card Type: Guest Card\n- Valid Until: Jan 25, 2025 14:00\n- Lock Status: Online\n\nSuggestion: Guide the guest on correct usage (tap/insert). If the issue continues, try reissuing the key card and re-test.'
+            },
+            replaced: {
+                status: 'error',
+                icon: 'error',
+                title: 'Old Card Replaced',
+                subtitle: 'Card superseded by newer one',
+                type: 'Guest Card',
+                room: '0712',
+                expiry: 'Disabled (Replaced)',
+                aiMessage: '🔴 Diagnosis complete: **Old Card Replaced**\n\n- Room: 0712\n- Current Card: Disabled (superseded by new card)\n- Latest Card Issued: Today 10:32 (Operator: Front Desk)\n\n**Evidence**: A new card was issued for the same room at 10:32. System policy "ReIssue Aborts Old Card" is enabled, so this card is now invalid.\n\nSuggestion: Verify that the guest has the latest card (check issue time/card number). Then retry at the door.'
+            },
+            syncpending: {
+                status: 'warning',
+                icon: 'warning',
+                title: 'Sync Pending',
+                subtitle: 'Permission not yet synced to lock',
+                type: 'Guest Card',
+                room: '0318',
+                expiry: '2025-01-24 12:00 (Valid)',
+                aiMessage: '🟡 Diagnosis complete: **Permission Sync Pending**\n\n- Room: 0318\n- Card Status: Valid\n- Lock Status: ZigBee Online\n- Command Queue: Pending tasks detected\n\n**Evidence**: System detected incomplete commands in the dispatch queue, which may cause the lock to not yet have updated permissions.\n\nSuggestion: Wait 1-2 minutes and retry. If still failing, check gateway/lock status in Device Management and click "Re-analyze" after link recovery. Avoid repeated card re-issuance (may invalidate old cards and complicate the issue).'
+            }
+        };
+        
+        function startCardDiagnosis() {
+            const panel = document.getElementById('aiPanel');
+            const overlay = document.getElementById('aiOverlay');
+            const welcome = document.getElementById('aiWelcome');
+            const messages = document.getElementById('aiMessages');
+            const quickPrompts = document.querySelector('.quick-prompts');
+            
+            // Enter expanded + canvas mode
+            panel.classList.add('expanded', 'canvas-mode');
+            overlay.classList.add('show');
+            document.getElementById('expandIcon').style.display = 'none';
+            document.getElementById('shrinkIcon').style.display = 'block';
+            
+            // Show chat area
+            welcome.classList.add('hidden');
+            messages.classList.remove('hidden');
+            if (quickPrompts) quickPrompts.style.display = 'flex';
+            
+            // Reset Canvas to waiting stage
+            resetCanvasStage();
+            
+            // Add AI message
+            addMessage('Card Diagnosis mode activated. Please place the card on the encoder.\n\n💡 You can also click "Demo Scenarios" on the left to preview different diagnosis results.', 'ai');
+        }
+
+        function closeCanvas() {
+            const panel = document.getElementById('aiPanel');
+            panel.classList.remove('canvas-mode');
+            resetCanvasStage();
+        }
+
+        function resetCanvasStage() {
+            document.querySelectorAll('.canvas-stage').forEach(s => s.classList.remove('active'));
+            document.getElementById('canvasWaiting').classList.add('active');
+            // Reset analysis steps (keep the new step-icon markup; do NOT overwrite with legacy HTML)
+            const stepDefs = [
+                { id: 'step1', label: 'Reading card info', loading: true },
+                { id: 'step2', label: 'Checking validity' },
+                { id: 'step3', label: 'Checking lock status' },
+                { id: 'step4', label: 'Analyzing results' },
+            ];
+            stepDefs.forEach(({ id, label, loading }) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.remove('active', 'done');
+                el.innerHTML = `<span class="step-icon${loading ? ' loading' : ''}"></span><span>${label}</span>`;
+            });
+        }
+
+        function resetCanvas() {
+            resetCanvasStage();
+            addMessage('Please place a new card, or click "Demo Scenarios" to see other results.', 'ai');
+        }
+
+        // Click demo scenario button
+        function simulateScenario(scenario) {
+            // Switch to analyzing stage
+            document.querySelectorAll('.canvas-stage').forEach(s => s.classList.remove('active'));
+            document.getElementById('canvasAnalyzing').classList.add('active');
+            
+            // Reset all steps (also repairs any legacy innerHTML that may have removed icons)
+            const stepDefs = [
+                { id: 'step1', label: 'Reading card info', loading: true },
+                { id: 'step2', label: 'Checking validity' },
+                { id: 'step3', label: 'Checking lock status' },
+                { id: 'step4', label: 'Analyzing results' },
+            ];
+            stepDefs.forEach(({ id, label, loading }) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.classList.remove('active', 'done');
+                el.innerHTML = `<span class="step-icon${loading ? ' loading' : ''}"></span><span>${label}</span>`;
+            });
+            const steps = stepDefs.map(s => s.id);
+            
+            // Animate steps one by one
+            let currentStep = 0;
+            function animateStep() {
+                if (currentStep < steps.length) {
+                    const stepEl = document.getElementById(steps[currentStep]);
+                    stepEl.classList.add('active');
+                    
+                    setTimeout(() => {
+                        stepEl.classList.remove('active');
+                        stepEl.classList.add('done');
+                        currentStep++;
+                        animateStep();
+                    }, 600);
+                } else {
+                    // All steps done, show result
+                    setTimeout(() => {
+                        showDiagnosisResult(scenario);
+                    }, 300);
+                }
+            }
+            animateStep();
+        }
+
+        function simulateCardDetected() {
+            simulateScenario('expired'); // Default demo
+        }
+
+        function showDiagnosisResult(scenario = 'expired') {
+            const data = scenarioData[scenario] || scenarioData.expired;
+            
+            // Update result card
+            const resultIcon = document.getElementById('resultIcon');
+            const resultTitle = document.getElementById('resultTitle');
+            const resultSubtitle = document.getElementById('resultSubtitle');
+            const resultDetails = document.getElementById('resultDetails');
+            const resultActions = document.querySelector('.result-actions');
+            
+            resultIcon.className = 'result-icon ' + data.icon;
+            resultTitle.textContent = data.title;
+            resultSubtitle.textContent = data.subtitle;
+            
+            // Update details
+            resultDetails.innerHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Card Type</span>
+                    <span class="detail-value">${data.type}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Room</span>
+                    <span class="detail-value">${data.room}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Valid Until</span>
+                    <span class="detail-value ${data.status === 'error' || scenario === 'expired' ? 'expired' : ''}">${data.expiry}</span>
+                </div>
+            `;
+            
+            // Keep UI non-invasive: only provide re-analyze entry
+            resultActions.innerHTML = `
+                <button class="action-btn secondary" onclick="resetCanvas()">Re-analyze</button>
+            `;
+            
+            // Show result stage
+            document.querySelectorAll('.canvas-stage').forEach(s => s.classList.remove('active'));
+            document.getElementById('canvasResult').classList.add('active');
+            
+            // Add AI message
+            addMessage(data.aiMessage, 'ai');
+        }
+
+        // Toggle Expand/Collapse
+        function toggleExpand() {
+            const panel = document.getElementById('aiPanel');
+            const overlay = document.getElementById('aiOverlay');
+            const expandIcon = document.getElementById('expandIcon');
+            const shrinkIcon = document.getElementById('shrinkIcon');
+            const isExpanded = panel.classList.contains('expanded');
+            
+            if (isExpanded) {
+                panel.classList.remove('expanded');
+                overlay.classList.remove('show');
+                expandIcon.style.display = 'block';
+                shrinkIcon.style.display = 'none';
+            } else {
+                panel.classList.add('expanded');
+                overlay.classList.add('show');
+                expandIcon.style.display = 'none';
+                shrinkIcon.style.display = 'block';
+            }
+        }
+
+        // Handle Like/Dislike Feedback
+        function handleFeedback(btn, type) {
+            const wrapper = btn.closest('.feedback-btns');
+            const likeBtn = wrapper.querySelector('.like');
+            const dislikeBtn = wrapper.querySelector('.dislike');
+            
+            if (type === 'like') {
+                if (likeBtn.classList.contains('active')) {
+                    likeBtn.classList.remove('active');
+                } else {
+                    likeBtn.classList.add('active');
+                    dislikeBtn.classList.remove('active');
+                }
+            } else {
+                if (dislikeBtn.classList.contains('active')) {
+                    dislikeBtn.classList.remove('active');
+                } else {
+                    dislikeBtn.classList.add('active');
+                    likeBtn.classList.remove('active');
+                }
+            }
+        }
+
+        // Start Chat from Welcome Page
+        function startChat(text) {
+            const welcome = document.getElementById('aiWelcome');
+            const messages = document.getElementById('aiMessages');
+            const quickPrompts = document.querySelector('.quick-prompts');
+            
+            // Hide welcome page, show chat area
+            welcome.classList.add('hidden');
+            messages.classList.remove('hidden');
+            if (quickPrompts) quickPrompts.style.display = 'flex';
+            
+            // Send user message
+            addMessage(text, 'user');
+            
+            // Simulate AI Reply
+            setTimeout(() => {
+                addMessage('I am processing your question: "' + text + '", please wait...', 'ai');
+            }, 500);
+        }
+
+        // Simulated Knowledge Base
+        const faqKnowledge = {
+            'gym': 'The gym is located on the **3rd Floor**, open from **6:00-22:00**.\n\n🔑 **Access**: Use your key card at the gym entrance.\n\n💡 **Tips**:\n- Please wear sportswear\n- Free water and towels provided\n- Book in advance for personal training',
+            'pool': 'The swimming pool is on the **5th Floor**, open from **7:00-21:00**.\n\n🔑 **Access**: Use key card at pool entrance.\n\n⚠️ **Note**:\n- Swim cap required\n- Children under 12 must be accompanied by an adult\n- Depth 1.2m-1.8m',
+            'breakfast': 'Breakfast is served at the **2nd Floor All-Day Dining**.\n\n⏰ **Time**:\n- Mon-Fri: 6:30-10:00\n- Sat-Sun: 6:30-10:30\n\n💰 **Price**:\n- Guest: ¥68/person\n- Walk-in: ¥98/person\n\n🍽️ Buffet style with 80+ items',
+            'wifi': 'Free WiFi is available throughout the hotel.\n\n📶 **Connect**:\n1. Select network: **Hotel-Guest**\n2. Open browser, enter Room No and last 4 digits of mobile\n3. Connected!\n\n💡 Dial **8888** for assistance',
+            'checkout': 'Check-out time is **12:00 PM**.\n\n⏰ **Late Check-out**:\n- 12:00-14:00: Free (Subject to availability)\n- 14:00-18:00: Half day rate\n- After 18:00: Full day rate\n\n📍 Please return key card to front desk',
+            'parking': 'Underground parking available.\n\n🚗 **Rates**:\n- Guests: Free (Validate with key card)\n- Visitors: ¥10/hour, Max ¥60\n\n💡 Show key card at exit for free parking',
+            'lock': 'If key card fails to open door:\n\n1️⃣ Ensure card is placed correctly\n2️⃣ Check if card is expired (Ask front desk)\n3️⃣ Try re-inserting card\n\nIf issue persists, dial **8888** for engineering support.\n\n⚠️ Keep card away from mobile phones and magnets',
+            'laundry': 'Laundry service available.\n\n👔 **How to use**:\n1. Fill out laundry form\n2. Place clothes in laundry bag\n3. Dial **8866** for pickup\n\n⏰ **Return Time**:\n- Standard: Next day by 18:00\n- Express: Same day (50% surcharge)'
+        };
+
+        function getAIResponse(question) {
+            const q = question.toLowerCase();
+            
+            // Match keywords
+            for (const [keyword, answer] of Object.entries(faqKnowledge)) {
+                if (q.includes(keyword.toLowerCase())) {
+                    return answer;
+                }
+            }
+            
+            // Default reply
+            if (q.includes('hello') || q.includes('hi')) {
+                return 'Hello! I am HostPilot, your smart hotel assistant. How can I help you?\n\nYou can ask about:\n- 🏊 Hotel Facilities (Gym, Pool)\n- 🍳 Dining\n- 🔑 Key Card/Lock Issues\n- 🚗 Parking\n- ⏰ Check-in/Check-out';
+            }
+            
+            return 'Sorry, I cannot answer this question right now.\n\nYou can try:\n- Rephrasing your question\n- Dialing **8888** for Front Desk\n\n💡 I can answer questions about facilities, hours, and key cards.';
+        }
+
+        // Send Message
+        function sendMessage() {
+            const input = document.getElementById('aiInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Save user message for retry
+            lastUserMessage = text;
+
+            // If welcome page is showing, switch to chat mode
+            const welcome = document.getElementById('aiWelcome');
+            if (welcome && !welcome.classList.contains('hidden')) {
+                welcome.classList.add('hidden');
+                document.getElementById('aiMessages').classList.remove('hidden');
+                document.querySelector('.quick-prompts').style.display = 'flex';
+            }
+
+            addMessage(text, 'user');
+            input.value = '';
+
+            // Simulate AI Reply (with typing delay)
+            setTimeout(() => {
+                const response = getAIResponse(text);
+                addMessage(response, 'ai');
+            }, 800);
+        }
+
+        // Add Message
+        function addMessage(text, type) {
+            const messages = document.getElementById('aiMessages');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'});
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message ' + type;
+            // Simple Markdown to HTML
+            let formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold
+                .replace(/\n/g, '<br>');  // Newline
+            
+            msgDiv.innerHTML = `
+                <div class="message-bubble">${formattedText}</div>
+                <div class="message-time">${timeStr}</div>
+            `;
+            messages.appendChild(msgDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        // Quick Prompts
+        function sendQuickPrompt(text) {
+            document.getElementById('aiInput').value = text;
+            sendMessage();
+        }
+
+        // Retry Last Message
+        let lastUserMessage = '';
+        function retryLastMessage() {
+            if (lastUserMessage) {
+                document.getElementById('aiInput').value = lastUserMessage;
+                sendMessage();
+            }
+        }
+
+        // Key Handling
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Listen for navigation requests from iframe
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'navigate') {
+                closeNotifyPanel();
+                document.getElementById('mainFrame').src = event.data.url;
+            }
+            if (event.data && event.data.type === 'openAI') {
+                toggleAI();
+            }
+            if (event.data && event.data.type === 'toggleNotify') {
+                toggleNotifyPanel();
+            }
+            if (event.data && event.data.type === 'closeNotify') {
+                closeNotifyPanel();
+            }
+            if (event.data && event.data.type === 'requestNotifyCount') {
+                sendNotifyCountTo(event.source);
+            }
+        });
+
+        // Notification Panel (Triggered by bell in iframe)
+        const notifyState = {
+            filter: 'unread',
+            items: [
+                { id: 'n1', module: 'Security Ops', level: 'urgent', title: 'Gateway GW-02 Offline 4h, 28 devices affected', meta: 'Restore gateway communication ASAP', time: '2025/12/11 10:12', url: 'security-ops-dashboard-en.html', unread: true },
+                { id: 'n2', module: 'Front Office', level: 'warning', title: 'Overdue Checkout: 0305 / 0402 / 0608', meta: 'Contact guests for extension or checkout', time: '2025/12/11 10:05', url: 'front-office-dashboard-en.html', unread: true },
+                { id: 'n3', module: 'Security Ops', level: 'warning', title: 'Low Battery: 8 Devices (0402 8%, 1008 15%)', meta: 'Replace batteries <10% ASAP', time: '2025/12/11 09:58', url: 'security-ops-dashboard-en.html', unread: true },
+                { id: 'n4', module: 'Overview', level: 'info', title: 'Door Ajar Alert Response Time 4.2m (+18%)', meta: 'Review staff response efficiency', time: '2025/12/11 09:42', url: 'overview-dashboard-en.html', unread: true },
+                { id: 'n5', module: 'Security Ops', level: 'urgent', title: 'Room 0815 "Ghost Room" Alert + Device Offline', meta: 'Check immediately for false alarm/risk', time: '2025/12/11 09:30', url: 'security-ops-dashboard-en.html', unread: true },
+                { id: 'n6', module: 'Front Office', level: 'info', title: 'Peak Check-in 17:00-19:00, 18 Arrivals Pending', meta: 'Prepare staff and key cards', time: '2025/12/11 09:15', url: 'front-office-dashboard-en.html', unread: false },
+                { id: 'n7', module: 'Front Office', level: 'warning', title: 'Twin Room Occ 84%, Recommend King (75%)', meta: 'Balance room types to avoid shortage', time: '2025/12/11 09:10', url: 'front-office-dashboard-en.html', unread: false },
+                { id: 'n8', module: 'Security Ops', level: 'warning', title: '3F Failure Rate 8.5% (Avg 3.2%)', meta: 'Suspected gateway/signal issue', time: '2025/12/11 09:02', url: 'security-ops-dashboard-en.html', unread: false },
+                { id: 'n9', module: 'Overview', level: 'info', title: 'Check-in to First Entry Avg 12.6m', meta: 'Monitor guest guidance process', time: '2025/12/11 08:55', url: 'overview-dashboard-en.html', unread: false },
+                { id: 'n10', module: 'Security Ops', level: 'info', title: 'New Security Event: Tailgating (5F)', meta: 'Review CCTV/Patrol logs', time: '2025/12/11 08:41', url: 'security-ops-dashboard-en.html', unread: false },
+                { id: 'n11', module: 'Front Office', level: 'warning', title: 'Arrival Rooms Not Ready: 6 on 12F', meta: 'Coordinate housekeeping priority', time: '2025/12/11 08:35', url: 'front-office-dashboard-en.html', unread: false },
+                { id: 'n12', module: 'Security Ops', level: 'info', title: 'Device Anomaly Rate +12% (Focus 3F/5F)', meta: 'Inspect floor gateways', time: '2025/12/11 08:20', url: 'security-ops-dashboard-en.html', unread: false },
+                { id: 'n13', module: 'Overview', level: 'info', title: 'Checkout to Clean Avg 28m (Target ≤25m)', meta: 'Optimize cleaning schedule', time: '2025/12/11 08:05', url: 'overview-dashboard-en.html', unread: false },
+                { id: 'n14', module: 'Security Ops', level: 'warning', title: 'Issues: 2 Offline / 8 Low Battery', meta: 'Fix offline first, then <20% battery', time: '2025/12/11 07:50', url: 'security-ops-dashboard-en.html', unread: false },
+                { id: 'n15', module: 'Front Office', level: 'info', title: 'High Room Turnover: 12 Out / 18 In', meta: 'Focus on peak hour efficiency', time: '2025/12/11 07:40', url: 'front-office-dashboard-en.html', unread: false },
+                { id: 'n16', module: 'Security Ops', level: 'warning', title: 'Real-time: 2 Door Ajar Alerts (10m)', meta: 'Alert patrol to check doors', time: '2025/12/11 07:35', url: 'security-ops-dashboard-en.html', unread: false },
+                { id: 'n17', module: 'Overview', level: 'info', title: 'Late Checkout 6.8% (+1.2pp vs Yest)', meta: 'Strengthen checkout reminders', time: '2025/12/11 07:20', url: 'overview-dashboard-en.html', unread: false },
+                { id: 'n18', module: 'Security Ops', level: 'info', title: 'Gateway Online Rate 98.6% (Normal)', meta: 'Monitor weak signal gateways', time: '2025/12/11 07:10', url: 'security-ops-dashboard-en.html', unread: false }
+            ]
+        };
+
+        function toggleNotifyPanel() {
+            const panel = document.getElementById('notifyPanel');
+            panel.classList.toggle('show');
+            if (panel.classList.contains('show')) {
+                renderNotifyList();
+            }
+        }
+
+        function closeNotifyPanel() {
+            const panel = document.getElementById('notifyPanel');
+            panel.classList.remove('show');
+        }
+
+        function setNotifyFilter(filter) {
+            notifyState.filter = filter;
+            document.getElementById('notifyFilterAll').classList.toggle('active', filter === 'all');
+            document.getElementById('notifyFilterUnread').classList.toggle('active', filter === 'unread');
+            renderNotifyList();
+        }
+
+        function markAllRead() {
+            notifyState.items.forEach(i => (i.unread = false));
+            renderNotifyList();
+        }
+
+        function getUnreadCount() {
+            return notifyState.items.filter(i => i.unread).length;
+        }
+
+        function sendNotifyCountTo(targetWindow) {
+            if (!targetWindow) return;
+            targetWindow.postMessage({ type: 'notifyCount', count: getUnreadCount() }, '*');
+        }
+
+        function broadcastNotifyCount() {
+            const count = getUnreadCount();
+            const frame = document.getElementById('mainFrame');
+            if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({ type: 'notifyCount', count }, '*');
+            }
+        }
+
+        function renderNotifyList() {
+            const list = document.getElementById('notifyList');
+            const items = notifyState.filter === 'unread'
+                ? notifyState.items.filter(i => i.unread)
+                : notifyState.items;
+
+            if (items.length === 0) {
+                list.innerHTML = '<div class="notify-empty">No ' + (notifyState.filter === 'unread' ? 'unread' : '') + ' notifications</div>';
+            } else {
+                list.innerHTML = items.map(i => {
+                    const levelText = i.level === 'urgent' ? 'Urgent' : (i.level === 'warning' ? 'Warning' : 'Info');
+                    return (
+                        '<div class="notify-item ' + (i.unread ? 'unread' : '') + '" onclick="openNotify(\'' + i.id + '\')">'
+                        +   '<div class="notify-row">'
+                        +     '<span class="notify-dot"></span>'
+                        +     '<span class="notify-pill">' + i.module + '</span>'
+                        +     '<span class="notify-level ' + i.level + '">' + levelText + '</span>'
+                        +   '</div>'
+                        +   '<div class="notify-title" style="margin-top:6px">' + i.title + '</div>'
+                        +   (i.meta ? '<div class="meta">' + i.time + ' · ' + i.meta + '</div>' : '<div class="meta">' + i.time + '</div>')
+                        + '</div>'
+                    );
+                }).join('');
+            }
+
+            // Sync unread count to iframe top bar bell
+            broadcastNotifyCount();
+        }
+
+        function openNotify(id) {
+            const item = notifyState.items.find(i => i.id === id);
+            if (!item) return;
+            // "Read on detail view": Opening detail modal counts as read
+            item.unread = false;
+            closeNotifyPanel();
+            broadcastNotifyCount();
+            showNotifyDetail(item);
+        }
+
+        let currentNotifyDetailId = null;
+        function showNotifyDetail(item) {
+            currentNotifyDetailId = item?.id || null;
+
+            const overlay = document.getElementById('notifyDetailOverlay');
+            const moduleEl = document.getElementById('notifyDetailModule');
+            const levelEl = document.getElementById('notifyDetailLevel');
+            const timeEl = document.getElementById('notifyDetailTime');
+            const titleEl = document.getElementById('notifyDetailTitle');
+            const metaEl = document.getElementById('notifyDetailMeta');
+            const goBtn = document.getElementById('notifyDetailGoBtn');
+
+            if (!overlay || !moduleEl || !levelEl || !timeEl || !titleEl || !metaEl || !goBtn) return;
+
+            const levelText = item.level === 'urgent' ? 'Urgent' : (item.level === 'warning' ? 'Warning' : 'Info');
+
+            moduleEl.textContent = item.module || '-';
+            levelEl.textContent = levelText;
+            levelEl.className = 'notify-level ' + (item.level || 'info');
+            timeEl.textContent = item.time || '-';
+            titleEl.textContent = item.title || '-';
+            metaEl.textContent = item.meta || '—';
+
+            // Hide "Go" button if no target URL
+            goBtn.style.display = item.url ? 'inline-flex' : 'none';
+
+            overlay.classList.add('show');
+        }
+
+        function closeNotifyDetail() {
+            currentNotifyDetailId = null;
+            const overlay = document.getElementById('notifyDetailOverlay');
+            if (overlay) overlay.classList.remove('show');
+        }
+
+        function goNotifyDetailTarget() {
+            if (!currentNotifyDetailId) return;
+            const item = notifyState.items.find(i => i.id === currentNotifyDetailId);
+            if (!item || !item.url) return;
+            closeNotifyDetail();
+            document.getElementById('mainFrame').src = item.url;
+        }
+
+        // Initial load: Push unread count once (for default page badge)
+        window.addEventListener('load', function() {
+            broadcastNotifyCount();
+        });
+
+        // Fix: Re-push unread count after iframe page load/switch
+        (function bindNotifyCountToFrameLoad() {
+            const frame = document.getElementById('mainFrame');
+            if (!frame) return;
+            frame.addEventListener('load', function() {
+                closeNotifyPanel();
+                broadcastNotifyCount();
+            });
+
+            // Fallback: Prevent default badge if outer load is faster than iframe
+            setTimeout(() => broadcastNotifyCount(), 0);
+        })();
+
+        function openNotifySettings() {
+            alert('Opening notification settings (Email/Rules)...');
+        }
+
+        // Click outside to close notification panel (delayed to avoid conflict with bell click)
+        let notifyJustOpened = false;
+        const origToggleNotifyPanel = toggleNotifyPanel;
+        toggleNotifyPanel = function() {
+            const panel = document.getElementById('notifyPanel');
+            const wasHidden = !panel.classList.contains('show');
+            origToggleNotifyPanel();
+            if (wasHidden && panel.classList.contains('show')) {
+                notifyJustOpened = true;
+                setTimeout(() => { notifyJustOpened = false; }, 100);
+            }
+        };
+        document.addEventListener('click', function(e) {
+            if (notifyJustOpened) return;
+            const panel = document.getElementById('notifyPanel');
+            if (!panel.classList.contains('show')) return;
+            if (panel.contains(e.target)) return;
+            panel.classList.remove('show');
+        });
+
+        // ESC to close notification detail modal
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+            const overlay = document.getElementById('notifyDetailOverlay');
+            if (overlay && overlay.classList.contains('show')) {
+                closeNotifyDetail();
+            }
+        });
+    </script>
+</body>
+</html>

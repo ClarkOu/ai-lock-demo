@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Dashboard Overview - Smart Lock Management System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f0f0; }
+        .container { display: flex; height: 100vh; }
+        
+        /* Sidebar styles */
+        .sidebar { width: 80px; background: linear-gradient(180deg, #1a2a4a 0%, #0d1829 100%); display: flex; flex-direction: column; align-items: center; padding-top: 10px; flex-shrink: 0; }
+        .sidebar-time { margin-top: auto; padding: 15px 5px; color: #ffffff; font-size: 11px; text-align: center; line-height: 1.5; }
+        .nav-item { width: 100%; padding: 15px 0; display: flex; flex-direction: column; align-items: center; color: #8899aa; cursor: pointer; transition: all 0.3s; border-left: 3px solid transparent; text-decoration: none; }
+        .nav-item:hover { color: #ffffff; background: rgba(255, 255, 255, 0.1); }
+        .nav-item.active { color: #ffffff; background: rgba(200, 170, 100, 0.2); border-left-color: #c9a961; }
+        .nav-item svg { width: 28px; height: 28px; margin-bottom: 5px; }
+        .nav-item span { font-size: 12px; }
+
+        /* Main content styles */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .header { background: #f0f0f0; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ccc; }
+        .header h1 { color: #333; font-size: 22px; font-weight: normal; }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .header-right .status { color: #1a2a4a; font-size: 14px; }
+        .admin-dropdown { color: #1a2a4a; font-weight: bold; cursor: pointer; }
+
+        .notify-btn {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(26, 42, 74, 0.15);
+            background: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .notify-btn svg { width: 20px; height: 20px; fill: #1a2a4a; }
+
+        .notify-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #c9a961;
+            color: #1a2a4a;
+            font-size: 11px;
+            line-height: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Dashboard Header */
+        .dashboard-header { background: linear-gradient(90deg, #1a2a4a 0%, #2a3a5a 100%); padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; }
+        .dashboard-title { display: flex; align-items: center; gap: 12px; }
+        .dashboard-title svg { width: 28px; height: 28px; fill: #c9a961; }
+        .dashboard-title h2 { color: #ffffff; font-size: 18px; font-weight: 500; }
+        .dashboard-title span { color: #8899aa; font-size: 13px; }
+
+        .dashboard-actions { display: flex; gap: 8px; align-items: center; }
+        .btn-action {
+            padding: 6px 12px;
+            background: rgba(201, 169, 97, 0.2);
+            border: 1px solid #c9a961;
+            border-radius: 4px;
+            color: #c9a961;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-action:hover { background: rgba(201, 169, 97, 0.3); }
+        
+        /* Dashboard Tabs */
+        .dashboard-tabs { background: #c9a961; padding: 0 20px; display: flex; gap: 5px; }
+        .dashboard-tab { padding: 10px 20px; color: #1a2a4a; font-size: 13px; cursor: pointer; border-radius: 4px 4px 0 0; transition: all 0.2s; text-decoration: none; }
+        .dashboard-tab:hover { background: rgba(255, 255, 255, 0.3); }
+        .dashboard-tab.active { background: #e8e8e8; font-weight: 500; }
+
+        /* Overview Content Styles */
+        .dashboard-content { flex: 1; background: #e8e8e8; padding: 12px; overflow-y: auto; min-width: 1000px; }
+        .overview-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 20px; }
+        .overview-card { background: #fff; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #c9a961; }
+        .overview-card h3 { font-size: 14px; color: #666; margin-bottom: 10px; font-weight: normal; }
+        .overview-card .value { font-size: 28px; font-weight: bold; color: #1a2a4a; }
+        .overview-card .trend { font-size: 12px; color: #4CAF50; margin-top: 5px; }
+        .overview-charts { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .chart-box { background: #fff; padding: 20px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-height: 350px; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .chart-title { font-size: 16px; color: #333; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .chart-title svg { width: 20px; height: 20px; fill: #666; }
+
+        /* AI Insight Box */
+        .ai-insight-box { background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%); border: 1px solid #e0e0e0; border-left: 4px solid #2196F3; border-radius: 4px; padding: 15px 20px; margin-bottom: 20px; display: flex; gap: 15px; align-items: flex-start; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .ai-icon { background: rgba(33, 150, 243, 0.1); padding: 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .ai-icon svg { width: 24px; height: 24px; fill: #2196F3; }
+        .ai-content h3 { font-size: 16px; color: #1a2a4a; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+        .ai-tag { font-size: 11px; background: #ffebee; color: #f44336; padding: 2px 6px; border-radius: 2px; font-weight: normal; }
+        .ai-content p { font-size: 13px; color: #555; line-height: 1.5; }
+
+        /* 打印 / 导出PDF（浏览器打印） */
+        @media print {
+            @page { margin: 10mm; }
+            * { animation: none !important; transition: none !important; }
+            body { background: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .sidebar, .header, .dashboard-tabs { display: none !important; }
+            .dashboard-actions, .notify-btn, .admin-dropdown { display: none !important; }
+            .container { height: auto !important; }
+            .main-content { overflow: visible !important; }
+            .dashboard-content { overflow: visible !important; min-width: 0 !important; padding: 0 !important; }
+            .ai-core-section, .overview-card, .chart-box, .ai-insight-box { break-inside: avoid; page-break-inside: avoid; }
+        }
+
+        /* AI Core Section - 统一风格 */
+        .ai-core-section { 
+            background: #fff;
+            border-radius: 10px; 
+            padding: 14px 18px; 
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e8e8e8;
+        }
+        .ai-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 10px; 
+            padding-bottom: 8px; 
+            border-bottom: 1px solid #f0f0f0; 
+        }
+        .ai-title { display: flex; align-items: center; gap: 10px; }
+        .ai-title .title-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #c9a961 0%, #e8d5a8 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .ai-title .title-icon svg { fill: #fff; width: 16px; height: 16px; }
+        .ai-title h3 { color: #1a2a4a; font-size: 15px; margin: 0; }
+        .ai-title .subtitle { color: #999; font-size: 11px; font-weight: normal; margin-left: 6px; }
+        .ai-status { color: #666; font-size: 12px; display: flex; align-items: center; }
+        .ai-icon-pulse { width: 10px; height: 10px; background: #4CAF50; border-radius: 50%; animation: pulse 2s infinite; margin-right: 8px; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 50% { box-shadow: 0 0 0 8px rgba(76, 175, 80, 0); } }
+
+        /* AI Summary Cards - 统计卡片样式 */
+        .ai-summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .ai-summary-card { 
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7f9 100%);
+            border-radius: 10px; 
+            padding: 14px 16px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            border: 1px solid #eef0f2;
+        }
+        .ai-summary-card:hover { 
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .ai-summary-card.urgent { border-left: 4px solid #f44336; background: linear-gradient(135deg, #fff5f5 0%, #fff 50%); }
+        .ai-summary-card.warning { border-left: 4px solid #ff9800; background: linear-gradient(135deg, #fffaf0 0%, #fff 50%); }
+        .ai-summary-card.info { border-left: 4px solid #2196F3; background: linear-gradient(135deg, #f0f7ff 0%, #fff 50%); }
+        .ai-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .ai-card-label { color: #666; font-size: 13px; font-weight: 500; }
+        .ai-card-badge { padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+        .ai-card-badge.urgent { background: #f44336; color: #fff; }
+        .ai-card-badge.warning { background: #ff9800; color: #fff; }
+        .ai-card-badge.info { background: #2196F3; color: #fff; }
+        .ai-card-count { font-size: 32px; font-weight: bold; color: #1a2a4a; line-height: 1; margin-bottom: 6px; }
+        .ai-card-desc { color: #888; font-size: 12px; line-height: 1.5; }
+        .ai-card-hint { color: #aaa; font-size: 11px; margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+        .ai-card-hint svg { width: 14px; height: 14px; fill: currentColor; }
+
+        /* Modal Styles - 弹窗样式 */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-overlay.active { display: flex; }
+        .modal-container { background: #fff; border-radius: 12px; width: 90%; max-width: 800px; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalIn 0.3s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-header { background: linear-gradient(90deg, #1a2a4a 0%, #2d3e5f 100%); padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { color: #fff; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .modal-title .badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; }
+        .modal-close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .modal-close:hover { background: rgba(255,255,255,0.2); }
+        .modal-body { padding: 0; max-height: 60vh; overflow-y: auto; }
+        .modal-footer { padding: 15px 25px; background: #f5f5f5; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* Insight Cards */
+        .insight-card { background: #fff; border-radius: 0; padding: 20px 25px; margin-bottom: 0; border-left: 4px solid #ccc; border-bottom: 1px solid #eee; }
+        .insight-card:last-child { border-bottom: none; }
+        .insight-card.urgent { border-left-color: #f44336; background: linear-gradient(90deg, #fff5f5 0%, #fff 10%); }
+        .insight-card.warning { border-left-color: #ff9800; background: linear-gradient(90deg, #fff8e1 0%, #fff 10%); }
+        .insight-card.info { border-left-color: #2196F3; background: linear-gradient(90deg, #e3f2fd 0%, #fff 10%); }
+        .insight-level { font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot.red { background: #f44336; }
+        .dot.orange { background: #ff9800; }
+        .dot.blue { background: #2196F3; }
+        .insight-title { font-size: 16px; font-weight: bold; color: #1a2a4a; margin-bottom: 12px; }
+        .insight-body { font-size: 13px; color: #555; line-height: 1.8; }
+        .insight-detail { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed #e0e0e0; }
+        .insight-detail strong { color: #1a2a4a; }
+        .insight-analysis { background: #f8f9fa; padding: 12px 14px; border-radius: 6px; margin-bottom: 14px; line-height: 1.8; }
+        .insight-analysis .label { color: #666; font-weight: bold; }
+        .insight-action { 
+            background: #f0f7ff; 
+            padding: 12px 14px; 
+            border-radius: 6px; 
+            border: 1px solid #d0e3f7;
+            line-height: 1.8;
+        }
+        .insight-action .label { color: #1565c0; font-weight: bold; display: block; margin-bottom: 4px; }
+        .action-btn { padding: 6px 14px; border-radius: 4px; font-size: 12px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #333; transition: all 0.2s; }
+        .action-btn:hover { background: #f5f5f5; }
+        .action-btn.primary { background: #1a2a4a; color: #fff; border-color: #1a2a4a; }
+        .action-btn.primary:hover { background: #2d3e5f; }
+
+        /* 统一区块容器样式 */
+        .dashboard-section {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e8e8e8;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title .title-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #c9a961 0%, #e8d5a8 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .section-title .title-icon svg { fill: #fff; width: 16px; height: 16px; }
+        .section-title h4 { margin: 0; font-size: 15px; font-weight: bold; color: #1a2a4a; }
+        .section-title .subtitle { font-size: 11px; color: #999; font-weight: normal; margin-left: 6px; }
+        .section-meta { font-size: 11px; color: #999; }
+
+        /* Efficiency Section */
+        .efficiency-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .efficiency-item { 
+            padding: 14px 16px;
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fb 100%);
+            border-radius: 12px;
+            border: 1px solid #e8eaed;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+        .efficiency-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .eff-label { font-size: 13px; color: #555; margin-bottom: 8px; font-weight: 600; }
+        .eff-value { font-size: 28px; font-weight: bold; color: #1a2a4a; line-height: 1; }
+        .eff-value small { font-size: 14px; font-weight: normal; color: #888; margin-left: 2px; }
+        .eff-compare { 
+            font-size: 12px; 
+            margin-top: 10px; 
+            color: #888;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .eff-compare.up { color: #4CAF50; }
+        .eff-compare.up::before { content: "↓"; font-weight: bold; }
+        .eff-compare.down { color: #f44336; }
+        .eff-compare.down::before { content: "↑"; font-weight: bold; }
+        .eff-insight { 
+            font-size: 11px; 
+            color: #666; 
+            margin-top: 10px; 
+            padding-top: 10px; 
+            border-top: 1px dashed #e0e0e0;
+            line-height: 1.4;
+        }
+
+        /* Security Section - 统计卡片 */
+        .security-grid { display: flex; gap: 16px; margin-bottom: 20px; }
+        .security-stat { 
+            flex: 1;
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 16px 18px;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7f9 100%);
+            border-radius: 10px;
+            border: 1px solid #eef0f2;
+            transition: all 0.2s ease;
+        }
+        .security-stat:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .security-stat.good { background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f2 100%); border-color: #c8e6c9; }
+        .security-stat.warning { background: linear-gradient(135deg, #fff3e0 0%, #fffaf0 100%); border-color: #ffe0b2; }
+        .security-stat .stat-icon { 
+            width: 42px; 
+            height: 42px; 
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            flex-shrink: 0;
+        }
+        .security-stat .stat-icon svg { width: 20px; height: 20px; }
+        .security-stat.good .stat-icon { background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%); color: #fff; }
+        .security-stat.warning .stat-icon { background: linear-gradient(135deg, #ff9800 0%, #FFB74D 100%); color: #fff; }
+        .security-stat .stat-icon { background: linear-gradient(135deg, #bdbdbd 0%, #e0e0e0 100%); color: #666; }
+        .stat-info .stat-value { font-size: 24px; font-weight: bold; color: #1a2a4a; line-height: 1.2; }
+        .stat-info .stat-label { font-size: 12px; color: #666; margin-top: 3px; }
+
+        /* Security Timeline - 时间轴 */
+        .security-timeline { 
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7f9 100%);
+            padding: 12px 18px 20px;
+            border-radius: 10px;
+            border: 1px solid #eef0f2;
+        }
+        .timeline-title { font-size: 13px; color: #1a2a4a; margin-bottom: 10px; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+        .timeline-title .legend { display: flex; gap: 14px; font-weight: normal; font-size: 11px; color: #666; }
+        .timeline-title .legend-item { display: flex; align-items: center; gap: 4px; }
+        .timeline-title .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .timeline-title .legend-dot.warning { background: #ff9800; }
+        .timeline-title .legend-dot.alert { background: #f44336; }
+        .timeline-container { position: relative; height: 70px; background: linear-gradient(180deg, #f5f7f9 0%, #eef0f2 100%); border-radius: 8px; border: 1px solid #e0e0e0; }
+        .timeline-track { position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: #d0d0d0; transform: translateY(-50%); border-radius: 2px; }
+        .timeline-hours { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; }
+        .timeline-hour { flex: 1; border-right: 1px solid rgba(0,0,0,0.06); }
+        .timeline-hour:nth-child(4n) { border-right-color: rgba(0,0,0,0.15); }
+        .event-marker {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+        }
+        .event-marker:hover { transform: translate(-50%, -50%) scale(1.4); z-index: 20; }
+        .event-marker.warning { background: #ff9800; }
+        .event-marker.alert { background: #f44336; }
+        .current-time-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e53935;
+            z-index: 5;
+            transform: translateX(-50%);
+        }
+        .current-time-line::before {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 6px solid #e53935;
+        }
+        .current-time-label {
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #e53935;
+            font-weight: bold;
+            white-space: nowrap;
+            background: #fff;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        .event-marker .event-tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: normal;
+            word-break: keep-all;
+            text-align: center;
+            min-width: 130px;
+            max-width: 180px;
+            line-height: 1.3;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            margin-bottom: 6px;
+        }
+        .event-tooltip-time { display: inline-block; font-weight: bold; font-size: 11px; white-space: nowrap; }
+        .event-tooltip-target { display: inline-block; font-size: 10px; opacity: 0.9; margin-left: 6px; white-space: nowrap; }
+        .event-tooltip-text { display: block; font-size: 10px; opacity: 0.85; margin-top: 2px; }
+        .event-marker .event-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: #333;
+        }
+        .event-marker.right .event-tooltip {
+            left: auto;
+            right: 0;
+            transform: none;
+        }
+        .event-marker.right .event-tooltip::after {
+            left: auto;
+            right: 10px;
+            transform: none;
+        }
+        .event-marker:hover .event-tooltip { opacity: 1; }
+        .time-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: #999; }
+
+        /* Heatmap Styles */
+        .heatmap-grid { display: flex; gap: 2px; width: 100%; }
+        .heatmap-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+        .heatmap-cell { width: 100%; border-radius: 2px 2px 0 0; transition: height 0.5s ease; }
+        .heatmap-label { font-size: 10px; color: #999; margin-top: 5px; }
+
+        /* Risk List Styles */
+        .risk-list { display: flex; flex-direction: column; gap: 12px; }
+        .risk-item { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+        .risk-name { width: 80px; color: #333; display: flex; align-items: center; gap: 5px; }
+        .risk-bar-bg { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+        .risk-bar-fill { height: 100%; border-radius: 4px; }
+        .risk-val { width: 30px; text-align: right; color: #666; font-weight: bold; }
+
+        /* 底部状态栏 */
+        .status-bar {
+            background: #1a2a4a;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #8899aa;
+        }
+        .status-indicators { display: flex; gap: 24px; }
+        .status-indicator { display: flex; align-items: center; gap: 8px; }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+        .status-dot.offline { background: #f44336; }
+        .status-dot.warning { background: #FFC107; }
+        .status-host { color: #667788; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <a href="main-en.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Home</span>
+            </a>
+            <a href="main-en.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 17h2v-1h1c.55 0 1-.45 1-1v-3c0-.55-.45-1-1-1h-3v-1h4V8h-2V7h-2v1h-1c-.55 0-1 .45-1 1v3c0 .55.45 1 1 1h3v1H9v2h2v1zm9-13H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2z"/></svg>
+                <span>Check-in</span>
+            </a>
+            <a href="main-en.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10 0h2v2h-2zm-6-4h8v2h-8z"/></svg>
+                <span>Special Card</span>
+            </a>
+            <a href="main-en.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                <span>Reports</span>
+            </a>
+            <a href="main-en.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.89 2-2V5c0-1.1-.89-2-2-2zm-7 14h-2v-4H6v-2h4V7h2v4h4v2h-4v4z"/></svg>
+                <span>Rooms</span>
+            </a>
+            <a href="#" class="nav-item active">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                <span>Smart Dashboard</span>
+            </a>
+            <a href="main-en.html" class="nav-item">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                <span>System</span>
+            </a>
+            <div class="sidebar-time">2025/11/28<br>17:06:23</div>
+        </nav>
+
+        <div class="main-content">
+            <header class="header">
+                <h1>SPLUS Hotel Locking System</h1>
+                <div class="header-right">
+                    <button class="notify-btn" type="button" title="通知" onclick="toggleNotify()">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6V11c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S10.5 3.17 10.5 4v.68C7.63 5.36 6 7.92 6 11v5l-1.7 1.7c-.2.2-.3.45-.3.7 0 .55.45 1 1 1h14c.55 0 1-.45 1-1 0-.25-.1-.5-.29-.71L18 16z"/></svg>
+                        <span class="notify-badge" id="notifyBadge" style="display:none"></span>
+                    </button>
+                    <span class="status">Please insert card encoder!</span>
+                    <span class="admin-dropdown">Admin ▼</span>
+                </div>
+            </header>
+
+            <div class="dashboard-header">
+                <div class="dashboard-title">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <h2>Smart Dashboard Overview</h2>
+                    <span>Data Overview</span>
+                </div>
+                <div class="dashboard-actions">
+                    <button class="btn-action" onclick="exportDashboardPdf()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v4h4v4h12v-4h4v-4c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-9a1 1 0 110 2 1 1 0 010-2zM18 3H6v4h12V3z"/></svg>
+                        Export PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="dashboard-tabs">
+                <a href="#" class="dashboard-tab active">Data Overview</a>
+                <a href="front-office-dashboard-en.html" class="dashboard-tab">Front Office</a>
+                <a href="security-ops-dashboard-en.html" class="dashboard-tab">Security Ops</a>
+            </div>
+
+            <div class="dashboard-content">
+                <!-- AI Core Insight Section - Stat Cards -->
+                <div class="ai-core-section">
+                    <div class="ai-header">
+                        <div class="ai-title">
+                            <div class="title-icon">
+                                <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                            </div>
+                            <h3>AI Smart Diagnostic Center</h3>
+                            <span class="subtitle">Smart Diagnostic Center</span>
+                        </div>
+                        <div class="ai-status">
+                            <span class="ai-icon-pulse"></span>
+                            Analyzing · Scanned 156 Rooms · 238 Events
+                        </div>
+                    </div>
+
+                    <!-- AI Summary Cards -->
+                    <div class="ai-summary-grid">
+                        <div class="ai-summary-card urgent" onclick="openModal('urgent')">
+                            <div class="ai-card-header">
+                                <span class="ai-card-label">Urgent Findings</span>
+                                <span class="ai-card-badge urgent">Action Required</span>
+                            </div>
+                            <div class="ai-card-count">3</div>
+                            <div class="ai-card-desc">Ghost Check-in, Ghost Room, Expired Card</div>
+                            <div class="ai-card-hint">
+                                <svg viewBox="0 0 24 24"><path d="M9 5v2h6.59L4 18.59 5.41 20 17 8.41V15h2V5z"/></svg>
+                                Click for details
+                            </div>
+                        </div>
+                        <div class="ai-summary-card warning" onclick="openModal('warning')">
+                            <div class="ai-card-header">
+                                <span class="ai-card-label">Important Alerts</span>
+                                <span class="ai-card-badge warning">Attention Needed</span>
+                            </div>
+                            <div class="ai-card-count">3</div>
+                            <div class="ai-card-desc">Staff Card Anomaly, Card Not Returned, High Freq Re-issue</div>
+                            <div class="ai-card-hint">
+                                <svg viewBox="0 0 24 24"><path d="M9 5v2h6.59L4 18.59 5.41 20 17 8.41V15h2V5z"/></svg>
+                                Click for details
+                            </div>
+                        </div>
+                        <div class="ai-summary-card info" onclick="openModal('info')">
+                            <div class="ai-card-header">
+                                <span class="ai-card-label">Predictions</span>
+                                <span class="ai-card-badge info">Plan Ahead</span>
+                            </div>
+                            <div class="ai-card-count">2</div>
+                            <div class="ai-card-desc">Battery Replacement, Gateway Offline</div>
+                            <div class="ai-card-hint">
+                                <svg viewBox="0 0 24 24"><path d="M9 5v2h6.59L4 18.59 5.41 20 17 8.41V15h2V5z"/></svg>
+                                Click for details
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operational Efficiency Insight -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="title-icon">
+                                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                            </div>
+                            <h4>Operational Efficiency</h4>
+                            <span class="subtitle">Operational Efficiency</span>
+                        </div>
+                        <div class="section-meta">Period: Last 7 Days</div>
+                    </div>
+                    <div class="efficiency-grid">
+                        <div class="efficiency-item">
+                            <div class="eff-label">Checkout → Clean Avg Time</div>
+                            <div class="eff-value">47<small>min</small></div>
+                            <div class="eff-compare down">vs Last Week +12min (Efficiency Drop)</div>
+                            <div class="eff-insight">Bottleneck: 14:00-15:00 Checkout Peak, Staff Shortage</div>
+                        </div>
+                        <div class="efficiency-item">
+                            <div class="eff-label">Check-in → First Open Avg</div>
+                            <div class="eff-value">8<small>min</small></div>
+                            <div class="eff-compare up">vs Last Week -3min (Improved)</div>
+                            <div class="eff-insight">Note: Guests find rooms quickly after card issue</div>
+                        </div>
+                        <div class="efficiency-item">
+                            <div class="eff-label">Door Ajar Alert Avg Response</div>
+                            <div class="eff-value">6.5<small>min</small></div>
+                            <div class="eff-compare">Industry Std: 5min</div>
+                            <div class="eff-insight">Suggestion: Push alerts to cleaner's mobile</div>
+                        </div>
+                        <div class="efficiency-item">
+                            <div class="eff-label">Late Checkout Rate</div>
+                            <div class="eff-value">12.3<small>%</small></div>
+                            <div class="eff-compare down">vs Last Week +2.1%</div>
+                            <div class="eff-insight">Suggestion: Push checkout reminder at 11:30</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Status Awareness -->
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <div class="title-icon">
+                                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                            </div>
+                            <h4>24H Security Status</h4>
+                            <span class="subtitle">Security Status</span>
+                        </div>
+                        <div class="section-meta">Updated: Real-time</div>
+                    </div>
+                    <div class="security-timeline">
+                        <div class="timeline-title">
+                            <span>24H Event Timeline</span>
+                            <div class="legend">
+                                <div class="legend-item"><span class="legend-dot warning"></span>Door Ajar</div>
+                                <div class="legend-item"><span class="legend-dot alert"></span>Abnormal Access</div>
+                            </div>
+                        </div>
+                        <div class="timeline-container">
+                            <div class="timeline-track"></div>
+                            <div class="timeline-hours">
+                                <div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div>
+                                <div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div>
+                                <div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div>
+                                <div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div>
+                                <div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div>
+                                <div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div><div class="timeline-hour"></div>
+                            </div>
+                            <!-- Current Time Line - Position calculated by JS -->
+                            <div class="current-time-line" id="currentTimeLine">
+                                <span class="current-time-label" id="currentTimeLabel">14:32</span>
+                            </div>
+                            <!-- Event Markers - Position as percentage (hour/24*100) -->
+                            
+                            <!-- Last Night Event (Ghost Room - Room 0815 22:00-23:00 Regular Entry) -->
+                            <div class="event-marker alert right" style="left: 93.1%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">22:21</div>
+                                    <div class="event-tooltip-target">Room 0815</div>
+                                    <div class="event-tooltip-text">Suspected Ghost Room Entry</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Staff Late Night Abnormal Entry (23:47-01:23 Visited 8 Rooms) -->
+                            <div class="event-marker alert right" style="left: 99.0%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">23:47</div>
+                                    <div class="event-tooltip-target">Staff Li Ming</div>
+                                    <div class="event-tooltip-text">Late Night Entry to Occupied Room</div>
+                                </div>
+                            </div>
+                            <div class="event-marker alert" style="left: 5.6%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">01:23</div>
+                                    <div class="event-tooltip-target">Staff Li Ming</div>
+                                    <div class="event-tooltip-text">Visited 8 Rooms in 1 Hour</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Ghost Room 0815 Morning Exit -->
+                            <div class="event-marker alert" style="left: 30.0%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">07:12</div>
+                                    <div class="event-tooltip-target">Room 0815</div>
+                                    <div class="event-tooltip-text">Suspected Ghost Room Exit</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Expired Card Entry (Dec 7, 8 still entry) -->
+                            <div class="event-marker alert" style="left: 40.0%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">09:36</div>
+                                    <div class="event-tooltip-target">Room 1205</div>
+                                    <div class="event-tooltip-text">Expired Guest Card Entry</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Door Ajar Timeout 3 times -->
+                            <div class="event-marker warning" style="left: 54.2%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">13:02</div>
+                                    <div class="event-tooltip-target">Room 0712</div>
+                                    <div class="event-tooltip-text">Door Ajar Timeout</div>
+                                </div>
+                            </div>
+                            <div class="event-marker warning" style="left: 60.4%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">14:30</div>
+                                    <div class="event-tooltip-target">Room 0915</div>
+                                    <div class="event-tooltip-text">Door Ajar Timeout</div>
+                                </div>
+                            </div>
+                            <div class="event-marker warning" style="left: 66.7%;">
+                                <div class="event-tooltip">
+                                    <div class="event-tooltip-time">16:00</div>
+                                    <div class="event-tooltip-target">Room 1203</div>
+                                    <div class="event-tooltip-text">Door Ajar Timeout</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="time-labels">
+                            <span>00:00</span><span>04:00</span><span>08:00</span><span>12:00</span><span>16:00</span><span>20:00</span><span>24:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div class="status-indicators">
+                    <div class="status-indicator">
+                        <div class="status-dot offline"></div>
+                        <span>Encoder</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot offline"></div>
+                        <span>Lock Service</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Cloud Service</span>
+                    </div>
+                </div>
+                <span class="status-host">DESKTOP-06NQ78P</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal - Urgent Findings -->
+    <div class="modal-overlay" id="modal-urgent" onclick="closeModal(event, 'urgent')">
+        <div class="modal-container" onclick="event.stopPropagation()">
+            <div class="modal-header" style="background: linear-gradient(90deg, #c62828 0%, #d32f2f 100%);">
+                <div class="modal-title">
+                    <span>🚨</span>
+                    Urgent Findings
+                    <span class="badge" style="background: rgba(255,255,255,0.2);">3 Pending</span>
+                </div>
+                <button class="modal-close" onclick="closeModal(event, 'urgent')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="insight-card urgent">
+                    <div class="insight-level"><span class="dot red"></span>Revenue Risk</div>
+                    <div class="insight-title">⚠️ Suspected "Ghost Room" Activity</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            Room <strong>0815</strong> status is "Vacant Clean", but detected <strong>regular entry records</strong> for the past <strong>3 days</strong>: Entry 22:00-23:00, Exit 07:00-08:00 next day.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span> 
+                            Typical accommodation pattern but <strong>no check-in, no billing</strong>. Possible scenarios: ① Staff issuing cards for cash (Ghost Room) ② Using expired guest card.
+                            <br>Correlation: Last official checkout for this room was <strong>Dec 5</strong>, but entry records continued from Dec 6.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Immediately check room occupancy ② Trace card issuance for this room ③ Check card logs to confirm source
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-card urgent">
+                    <div class="insight-level"><span class="dot red"></span>Revenue Risk</div>
+                    <div class="insight-title">"Ghost Check-in" - Occupied but Empty</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            Rooms <strong>1208, 1506</strong> checked in over <strong>36 hours</strong> ago, but lock shows <strong>zero entry records</strong>.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span> 
+                            Possible scenarios: ① Guest No-Show ② Front desk error ③ Malicious room blocking. Historical data shows <strong>67%</strong> are No-Shows. Verify immediately.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Notify front desk to verify if guest actually checked in ② Confirm order status and payment
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-card urgent">
+                    <div class="insight-level"><span class="dot red"></span>Security Vulnerability</div>
+                    <div class="insight-title">Expired Guest Card Entry Record</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            Card <strong>A7F3E2D1</strong> expired on <strong>Dec 6 12:00</strong> (Room 1205), but successful entry events recorded on <strong>Dec 7, 8</strong>.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span>
+                            Possible causes: ① Lock time not synchronized, local validation passed ② Card data cloned ③ System vulnerability.
+                            <br><strong>Correlation Check:</strong> Lock last synced <strong>18 days ago</strong>, risk of time deviation.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Immediately sync lock time ② Check card status to confirm expiration
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal - Important Alerts -->
+    <div class="modal-overlay" id="modal-warning" onclick="closeModal(event, 'warning')">
+        <div class="modal-container" onclick="event.stopPropagation()">
+            <div class="modal-header" style="background: linear-gradient(90deg, #ef6c00 0%, #ff9800 100%);">
+                <div class="modal-title">
+                    <span>⚠️</span>
+                    Important Alerts
+                    <span class="badge" style="background: rgba(255,255,255,0.2);">3 Items</span>
+                </div>
+                <button class="modal-close" onclick="closeModal(event, 'warning')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="insight-card warning">
+                    <div class="insight-level"><span class="dot orange"></span>Internal Audit</div>
+                    <div class="insight-title">Staff Late Night Abnormal Entry + Multi-room Access</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            Staff <strong>Li Ming (Cleaner)</strong> visited <strong>8</strong> occupied rooms within <strong>1 hour</strong> during late night <strong>23:47-01:23 yesterday</strong>.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span>
+                            Triggered two rules: ① Late night entry to occupied rooms (00:00-06:00) ② Visited ≥5 different rooms in 1 hour. No similar record for this staff in past 30 days.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Check room list and trajectory of late night visits ② Contact HR to verify work schedule
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-card warning">
+                    <div class="insight-level"><span class="dot orange"></span>Security Risk</div>
+                    <div class="insight-title">Checkout Card Not Returned - Still Active</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            Room <strong>0912</strong> guest checked out card-less at <strong>Dec 7 11:23</strong>, but card expires on <strong>Dec 9</strong> and can still open door.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span>
+                            Card-less checkout but card not physically returned. If guest returns with card, they can enter before new guest checks in.
+                            <br><strong>Correlation Check:</strong> Room occupied by new guest at <strong>Dec 8 15:00</strong>, risk of double access.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Issue terminate card command to invalidate card ② Check recent entry records for this room
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-card warning">
+                    <div class="insight-level"><span class="dot orange"></span>Operational Anomaly</div>
+                    <div class="insight-title">High Frequency Card Re-issue - Suspicious Pattern</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            Room <strong>1103</strong> re-issued card <strong>4 times</strong> during current stay (since Dec 5), far exceeding normal 0.3 times/stay.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span>
+                            Possible causes: ① Lock malfunction causing card failure ② Guest lost card multiple times ③ <strong>Lending/Selling cards for multi-person use</strong>.
+                            <br>Correlation: Room opened <strong>47 times</strong> this week, avg 9.4/day, significantly higher than room type avg 3.2.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Check lock status and battery ② Verify if guest frequently loses cards ③ Investigate multi-person usage
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal - Predictions -->
+    <div class="modal-overlay" id="modal-info" onclick="closeModal(event, 'info')">
+        <div class="modal-container" onclick="event.stopPropagation()">
+            <div class="modal-header" style="background: linear-gradient(90deg, #1565c0 0%, #2196F3 100%);">
+                <div class="modal-title">
+                    <span>🔮</span>
+                    Predictions
+                    <span class="badge" style="background: rgba(255,255,255,0.2);">2 Items</span>
+                </div>
+                <button class="modal-close" onclick="closeModal(event, 'info')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="insight-card info">
+                    <div class="insight-level"><span class="dot blue"></span>Device Health</div>
+                    <div class="insight-title">Battery Replacement Alert</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            <strong>7 rooms</strong> out of 18 on <strong>12th Floor</strong> triggered low battery warning, concentration <strong>38.9%</strong>.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span>
+                            Locks installed in same batch Mar 2024. Based on battery life curve, remaining 11 rooms will trigger low battery within <strong>14 days</strong>. Suggest batch replacement to avoid complaints.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Generate batch battery replacement work order ② Check battery status of all devices on 12th floor
+                        </div>
+                    </div>
+                </div>
+                <div class="insight-card info">
+                    <div class="insight-level"><span class="dot blue"></span>Connection Health</div>
+                    <div class="insight-title">Gateway Offline Causing Batch Disconnect</div>
+                    <div class="insight-body">
+                        <div class="insight-detail">
+                            Gateway <strong>GW-F08-01</strong> (8th Floor) offline for <strong>4 hours</strong>, causing <strong>12 locks</strong> Zigbee status offline.
+                        </div>
+                        <div class="insight-analysis">
+                            <span class="label">AI Analysis:</span>
+                            Possible causes: ① Power outage ② Network failure ③ Device failure. Impact: All rooms on 8th floor <strong>cannot checkout online, no real-time monitoring</strong>, require handheld unit.
+                        </div>
+                        <div class="insight-action">
+                            <span class="label">Suggested Action:</span>
+                            ① Check gateway power and network ② Check status of all locks under this gateway ③ Restart or replace gateway if necessary
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleNotify() {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'toggleNotify' }, '*');
+            } else {
+                alert('Opening notification panel...');
+            }
+        }
+
+        // 顶部铃铛角标：同步未读数
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'notifyCount') {
+                const badge = document.getElementById('notifyBadge');
+                if (!badge) return;
+                const count = Number(event.data.count || 0);
+                if (count > 0) {
+                    badge.textContent = String(count);
+                    badge.style.display = '';
+                } else {
+                    badge.textContent = '';
+                    badge.style.display = 'none';
+                }
+            }
+        });
+
+        // 切换/加载后向外壳请求一次未读数，避免角标显示默认值
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'requestNotifyCount' }, '*');
+        }
+
+        // 点击页面内容时，通知外壳关闭通知面板
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.notify-btn')) return;
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'closeNotify' }, '*');
+            }
+        });
+
+        // 弹窗控制
+        function openModal(type) {
+            document.getElementById('modal-' + type).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeModal(event, type) {
+            if (event.target === event.currentTarget || event.target.classList.contains('modal-close')) {
+                document.getElementById('modal-' + type).classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        // ESC 键关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Update Time
+        function updateTime() {
+            const now = new Date();
+            const timeStr = now.toLocaleString('en-US', { hour12: false });
+            document.querySelector('.sidebar-time').innerHTML = timeStr.replace(', ', '<br>');
+            
+            // 更新当前时间线位置
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const percentage = ((hours * 60 + minutes) / (24 * 60)) * 100;
+            const timeLine = document.getElementById('currentTimeLine');
+            const timeLabel = document.getElementById('currentTimeLabel');
+            if (timeLine) {
+                timeLine.style.left = percentage + '%';
+            }
+            if (timeLabel) {
+                timeLabel.textContent = hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+            }
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // 看板级导出：使用浏览器打印对话框保存为 PDF
+        function exportDashboardPdf() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
