@@ -23,8 +23,6 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       # Publish the static HTML demo from the ui/ folder.
       - name: Upload artifact
