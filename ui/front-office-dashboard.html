@@ -345,6 +345,52 @@
             font-size: 12px;
         }
 
+        /* 时间筛选器 */
+        .time-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .time-filter-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .time-filter-select {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #c9a961;
+            border-radius: 4px;
+            color: #c9a961;
+            padding: 6px 28px 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23c9a961'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            min-width: 110px;
+        }
+
+        .time-filter-select:hover {
+            background-color: rgba(201, 169, 97, 0.2);
+        }
+
+        .time-filter-select:focus {
+            border-color: #d4b76a;
+            box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.3);
+        }
+
+        .time-filter-select option {
+            background: #1a2a4a;
+            color: #c9a961;
+            padding: 8px;
+        }
+
         /* 仪表盘子导航 */
         .dashboard-tabs {
             background: #c9a961;
@@ -1311,6 +1357,15 @@
                     <span>Front Office Operations Agent</span>
                 </div>
                 <div class="dashboard-actions">
+                    <div class="time-filter">
+                        <span class="time-filter-label">时间范围：</span>
+                        <select class="time-filter-select" id="timeFilter" onchange="onTimeFilterChange(this.value)">
+                            <option value="today" selected>今天</option>
+                            <option value="yesterday">昨天</option>
+                            <option value="week">过去一周</option>
+                            <option value="month">过去一个月</option>
+                        </select>
+                    </div>
                     <span class="refresh-time">数据更新于 <span id="updateTime">17:06:23</span></span>
                     <button class="btn-refresh" onclick="exportDashboardPdf()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v4h4v4h12v-4h4v-4c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-9a1 1 0 110 2 1 1 0 010-2zM18 3H6v4h12V3z"/></svg>
@@ -1867,6 +1922,358 @@
                     });
                 });
             });
+        }
+
+        // 不同时间范围的模拟数据
+        const mockData = {
+            today: {
+                occupancyLabel: '当前入住率',
+                occupancyRate: 78.5,
+                occupancyTrend: '↑ 较昨日 +3.2% · 在住 122/156',
+                occupancyTrendClass: 'up',
+                checkInLabel: '今日入住',
+                checkIn: 42,
+                checkInDetail: '待办 18 · 已办 24',
+                checkOutLabel: '今日退房',
+                checkOut: 38,
+                checkOutDetail: '待退 15 · 已退 23',
+                alertLabel: '异常关注',
+                alerts: 3,
+                alertDetail: '⚠️ 超时未退 · 即将到期 5',
+                stayLabel: '平均入住时长',
+                avgStay: 2.3,
+                stayTrend: '↓ 较昨日 -0.2天',
+                stayTrendClass: 'down'
+            },
+            yesterday: {
+                occupancyLabel: '昨日入住率',
+                occupancyRate: 75.3,
+                occupancyTrend: '↓ 较前日 -1.8% · 当日在住 117/156',
+                occupancyTrendClass: 'down',
+                checkInLabel: '昨日入住',
+                checkIn: 35,
+                checkInDetail: '全部完成',
+                checkOutLabel: '昨日退房',
+                checkOut: 41,
+                checkOutDetail: '全部完成',
+                alertLabel: '昨日异常',
+                alerts: 1,
+                alertDetail: '✓ 已全部处理',
+                stayLabel: '昨日平均时长',
+                avgStay: 2.5,
+                stayTrend: '↑ 较前日 +0.1天',
+                stayTrendClass: 'up'
+            },
+            week: {
+                occupancyLabel: '周平均入住率',
+                occupancyRate: 72.8,
+                occupancyTrend: '↓ 较上周 -2.1% · 日均在住 114/156',
+                occupancyTrendClass: 'down',
+                checkInLabel: '本周入住',
+                checkIn: 287,
+                checkInDetail: '日均 41 · 高峰 周五 58',
+                checkOutLabel: '本周退房',
+                checkOut: 265,
+                checkOutDetail: '日均 38 · 高峰 周日 52',
+                alertLabel: '本周异常统计',
+                alerts: 12,
+                alertDetail: '已处理 10 · 待处理 2',
+                stayLabel: '周均入住时长',
+                avgStay: 2.4,
+                stayTrend: '→ 较上周持平',
+                stayTrendClass: 'neutral'
+            },
+            month: {
+                occupancyLabel: '月平均入住率',
+                occupancyRate: 76.2,
+                occupancyTrend: '↑ 较上月 +4.5% · 日均在住 119/156',
+                occupancyTrendClass: 'up',
+                checkInLabel: '本月入住',
+                checkIn: 1245,
+                checkInDetail: '日均 41 · 高峰 1月3日 68',
+                checkOutLabel: '本月退房',
+                checkOut: 1189,
+                checkOutDetail: '日均 40 · 高峰 1月4日 61',
+                alertLabel: '本月异常统计',
+                alerts: 47,
+                alertDetail: '已处理 45 · 待处理 2',
+                stayLabel: '月均入住时长',
+                avgStay: 2.6,
+                stayTrend: '↑ 较上月 +0.3天',
+                stayTrendClass: 'up',
+                // 模块标题
+                roomStatusTitle: '本月房态统计',
+                roomStatusTab1: '本月退房',
+                roomStatusTab2: '本月入住',
+                durationTitle: '月均入住时长分布',
+                durationTotal: '月均 124 间在住',
+                roomTypeTitle: '本月房型入住统计',
+                roomTypeTotal: '共 156 间客房',
+                trendTitle: '入住率趋势（近30天）',
+                peakTitle: '本月入住高峰时段'
+            }
+        };
+
+        // 模块数据配置（标题+内部数据）
+        const moduleData = {
+            today: {
+                // 标题
+                roomStatusTitle: '今日房态',
+                roomStatusTab1: '今日退房',
+                roomStatusTab2: '今日入住',
+                durationTitle: '当前入住时长分布',
+                durationTotal: '当前 124 间在住',
+                roomTypeTitle: '房型入住统计',
+                roomTypeTotal: '共 156 间客房',
+                trendTitle: '入住率趋势（近7天）',
+                peakTitle: '本周入住高峰时段',
+                // 时长分布数据
+                duration: [
+                    { count: 56, pct: 45 },  // 当日房
+                    { count: 40, pct: 32 },  // 短住
+                    { count: 22, pct: 18 },  // 中住
+                    { count: 6, pct: 5 }     // 长住
+                ],
+                durationSummary: '平均入住 <strong>2.3</strong> 天',
+                durationCheckout: '今日预计退房 <strong>38</strong> 间',
+                // 房型数据
+                roomType: [
+                    { occupied: 45, total: 60, rate: 75 },  // 大床房
+                    { occupied: 38, total: 45, rate: 84 },  // 双床房
+                    { occupied: 21, total: 30, rate: 70 },  // 套房
+                    { occupied: 14, total: 21, rate: 67 }   // 其他
+                ]
+            },
+            yesterday: {
+                roomStatusTitle: '昨日房态',
+                roomStatusTab1: '昨日退房',
+                roomStatusTab2: '昨日入住',
+                durationTitle: '昨日入住时长分布',
+                durationTotal: '昨日 117 间在住',
+                roomTypeTitle: '昨日房型统计',
+                roomTypeTotal: '共 156 间客房',
+                trendTitle: '入住率趋势（近7天）',
+                peakTitle: '昨日入住高峰时段',
+                duration: [
+                    { count: 52, pct: 44 },
+                    { count: 38, pct: 33 },
+                    { count: 21, pct: 18 },
+                    { count: 6, pct: 5 }
+                ],
+                durationSummary: '平均入住 <strong>2.5</strong> 天',
+                durationCheckout: '昨日退房 <strong>41</strong> 间',
+                roomType: [
+                    { occupied: 42, total: 60, rate: 70 },
+                    { occupied: 35, total: 45, rate: 78 },
+                    { occupied: 22, total: 30, rate: 73 },
+                    { occupied: 18, total: 21, rate: 86 }
+                ]
+            },
+            week: {
+                roomStatusTitle: '本周房态统计',
+                roomStatusTab1: '本周退房',
+                roomStatusTab2: '本周入住',
+                durationTitle: '周均入住时长分布',
+                durationTotal: '日均 114 间在住',
+                roomTypeTitle: '本周房型入住统计',
+                roomTypeTotal: '共 156 间客房',
+                trendTitle: '入住率趋势（近7天）',
+                peakTitle: '本周入住高峰时段',
+                duration: [
+                    { count: 48, pct: 42 },
+                    { count: 39, pct: 34 },
+                    { count: 20, pct: 18 },
+                    { count: 7, pct: 6 }
+                ],
+                durationSummary: '周均入住 <strong>2.4</strong> 天',
+                durationCheckout: '本周退房 <strong>265</strong> 间',
+                roomType: [
+                    { occupied: 41, total: 60, rate: 68 },
+                    { occupied: 36, total: 45, rate: 80 },
+                    { occupied: 20, total: 30, rate: 67 },
+                    { occupied: 17, total: 21, rate: 81 }
+                ]
+            },
+            month: {
+                roomStatusTitle: '本月房态统计',
+                roomStatusTab1: '本月退房',
+                roomStatusTab2: '本月入住',
+                durationTitle: '月均入住时长分布',
+                durationTotal: '日均 119 间在住',
+                roomTypeTitle: '本月房型入住统计',
+                roomTypeTotal: '共 156 间客房',
+                trendTitle: '入住率趋势（近30天）',
+                peakTitle: '本月入住高峰时段',
+                duration: [
+                    { count: 51, pct: 43 },
+                    { count: 40, pct: 34 },
+                    { count: 21, pct: 17 },
+                    { count: 7, pct: 6 }
+                ],
+                durationSummary: '月均入住 <strong>2.6</strong> 天',
+                durationCheckout: '本月退房 <strong>1189</strong> 间',
+                roomType: [
+                    { occupied: 44, total: 60, rate: 73 },
+                    { occupied: 37, total: 45, rate: 82 },
+                    { occupied: 22, total: 30, rate: 73 },
+                    { occupied: 16, total: 21, rate: 76 }
+                ]
+            }
+        };
+
+        // 时间筛选处理
+        function onTimeFilterChange(value) {
+            console.log('时间筛选已切换到:', value);
+            updateDashboardData(value);
+        }
+
+        // 根据时间范围更新仪表盘数据
+        function updateDashboardData(timeRange) {
+            const data = mockData[timeRange] || mockData.today;
+            const modData = moduleData[timeRange] || moduleData.today;
+            const statCards = document.querySelectorAll('.stat-card');
+            const moduleCards = document.querySelectorAll('.module-card');
+            
+            // 添加淡出效果
+            statCards.forEach(card => card.style.opacity = '0.5');
+            moduleCards.forEach(card => card.style.opacity = '0.7');
+            
+            setTimeout(() => {
+                // 卡片1: 入住率
+                if (statCards[0]) {
+                    statCards[0].querySelector('.label').textContent = data.occupancyLabel;
+                    statCards[0].querySelector('.value').innerHTML = data.occupancyRate + '<small>%</small>';
+                    statCards[0].querySelector('.trend').textContent = data.occupancyTrend;
+                    statCards[0].querySelector('.trend').className = 'trend ' + data.occupancyTrendClass;
+                }
+                
+                // 卡片2: 入住
+                if (statCards[1]) {
+                    statCards[1].querySelector('.label').textContent = data.checkInLabel;
+                    statCards[1].querySelector('.value').textContent = data.checkIn;
+                    statCards[1].querySelector('.trend').textContent = data.checkInDetail;
+                }
+                
+                // 卡片3: 退房
+                if (statCards[2]) {
+                    statCards[2].querySelector('.label').textContent = data.checkOutLabel;
+                    statCards[2].querySelector('.value').textContent = data.checkOut;
+                    statCards[2].querySelector('.trend').textContent = data.checkOutDetail;
+                }
+                
+                // 卡片4: 异常
+                if (statCards[3]) {
+                    statCards[3].querySelector('.label').textContent = data.alertLabel;
+                    statCards[3].querySelector('.value').textContent = data.alerts;
+                    statCards[3].querySelector('.trend').innerHTML = data.alertDetail;
+                }
+                
+                // 卡片5: 入住时长
+                if (statCards[4]) {
+                    statCards[4].querySelector('.label').textContent = data.stayLabel;
+                    statCards[4].querySelector('.value').innerHTML = data.avgStay + '<small>天</small>';
+                    statCards[4].querySelector('.trend').textContent = data.stayTrend;
+                    statCards[4].querySelector('.trend').className = 'trend ' + data.stayTrendClass;
+                }
+                
+                // 更新模块1: 房态标题
+                if (moduleCards[0]) {
+                    const h3 = moduleCards[0].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.roomStatusTitle + '\n                            '));
+                    }
+                    const tabs = moduleCards[0].querySelectorAll('.module-tab');
+                    if (tabs[0]) tabs[0].innerHTML = modData.roomStatusTab1 + ' <span class="badge">4</span>';
+                    if (tabs[1]) tabs[1].innerHTML = modData.roomStatusTab2 + ' <span class="badge warning">4</span>';
+                }
+                
+                // 更新模块2: 入住时长分布
+                if (moduleCards[1]) {
+                    const h3 = moduleCards[1].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.durationTitle + '\n                            '));
+                    }
+                    const moreLink = moduleCards[1].querySelector('.module-header .more-link');
+                    if (moreLink) moreLink.textContent = modData.durationTotal;
+                    
+                    // 更新时长分布数据
+                    const durationItems = moduleCards[1].querySelectorAll('.duration-item');
+                    const colors = ['#4CAF50', '#c9a961', '#2196F3', '#9C27B0'];
+                    durationItems.forEach((item, i) => {
+                        if (modData.duration[i]) {
+                            const d = modData.duration[i];
+                            item.querySelector('.duration-bar').style.width = d.pct + '%';
+                            item.querySelector('.duration-count').textContent = d.count;
+                            item.querySelector('.duration-pct').textContent = d.pct + '%';
+                        }
+                    });
+                    
+                    // 更新汇总
+                    const summary = moduleCards[1].querySelector('.duration-summary');
+                    if (summary) {
+                        summary.innerHTML = '<span>' + modData.durationSummary + '</span><span>' + modData.durationCheckout + '</span>';
+                    }
+                }
+                
+                // 更新模块3: 房型统计
+                if (moduleCards[2]) {
+                    const h3 = moduleCards[2].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.roomTypeTitle + '\n                            '));
+                    }
+                    const moreLink = moduleCards[2].querySelector('.module-header .more-link');
+                    if (moreLink) moreLink.textContent = modData.roomTypeTotal;
+                    
+                    // 更新房型数据
+                    const roomTypeItems = moduleCards[2].querySelectorAll('.room-type-item');
+                    roomTypeItems.forEach((item, i) => {
+                        if (modData.roomType[i]) {
+                            const r = modData.roomType[i];
+                            item.querySelector('.bar-fill').style.width = r.rate + '%';
+                            item.querySelector('.occupied').textContent = r.occupied;
+                            item.querySelector('.rate').textContent = r.rate + '%';
+                        }
+                    });
+                }
+                
+                // 更新模块4: 入住率趋势标题
+                if (moduleCards[3]) {
+                    const h3 = moduleCards[3].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.trendTitle + '\n                            '));
+                    }
+                }
+                
+                // 更新模块5: 入住高峰标题
+                if (moduleCards[4]) {
+                    const h3 = moduleCards[4].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.peakTitle + '\n                            '));
+                    }
+                }
+                
+                // 恢复显示
+                statCards.forEach(card => card.style.opacity = '1');
+                moduleCards.forEach(card => card.style.opacity = '1');
+                
+                // 触发数字动画
+                animateNumbers();
+            }, 200);
         }
 
         // 数字滚动动画

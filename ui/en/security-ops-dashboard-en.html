@@ -282,6 +282,52 @@
             font-size: 12px;
         }
 
+        /* Time Filter */
+        .time-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .time-filter-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .time-filter-select {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #c9a961;
+            border-radius: 4px;
+            color: #c9a961;
+            padding: 6px 28px 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23c9a961'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            min-width: 110px;
+        }
+
+        .time-filter-select:hover {
+            background-color: rgba(201, 169, 97, 0.2);
+        }
+
+        .time-filter-select:focus {
+            border-color: #d4b76a;
+            box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.3);
+        }
+
+        .time-filter-select option {
+            background: #1a2a4a;
+            color: #c9a961;
+            padding: 8px;
+        }
+
         /* Print / Export PDF (Browser Print) */
         @media print {
             @page { margin: 10mm; }
@@ -948,6 +994,15 @@
                     <span>Security & Operations Agent</span>
                 </div>
                 <div class="dashboard-actions">
+                    <div class="time-filter">
+                        <span class="time-filter-label">Time Range:</span>
+                        <select class="time-filter-select" id="timeFilter" onchange="onTimeFilterChange(this.value)">
+                            <option value="today" selected>Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month">Last 30 Days</option>
+                        </select>
+                    </div>
                     <span class="refresh-time">Data updated at <span id="updateTime">17:06:23</span></span>
                     <button class="btn-refresh" onclick="exportDashboardPdf()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v4h4v4h12v-4h4v-4c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-9a1 1 0 110 2 1 1 0 010-2zM18 3H6v4h12V3z"/></svg>
@@ -1433,6 +1488,421 @@
                     }, duration / steps);
                 }
             });
+        }
+
+        // Mock data for different time ranges
+        const mockData = {
+            today: {
+                healthScore: 92,
+                healthTrend: '↓ vs yesterday -3 · Gateway issue',
+                healthTrendClass: 'down',
+                events: 23,
+                eventsDetail: 'Security 12 · Device 11',
+                offlineDevices: 5,
+                offlineDetail: '⚠️ >4h: 2 units need priority',
+                lowBattery: 8,
+                batteryDetail: '⚠️ <10%: 2 units need replace',
+                gatewayRate: 75,
+                gatewayDetail: '⚠️ 1 of 4 gateways offline (3F)',
+                eventBadges: { all: 6, security: 4, device: 2 },
+                timeLabel: 'Today',
+                compLabel: 'vs yesterday'
+            },
+            yesterday: {
+                healthScore: 95,
+                healthTrend: '↑ vs day before +2 · Stable',
+                healthTrendClass: 'up',
+                events: 18,
+                eventsDetail: 'Security 8 · Device 10',
+                offlineDevices: 3,
+                offlineDetail: '⚠️ >4h: 1 unit resolved',
+                lowBattery: 6,
+                batteryDetail: '⚠️ <10%: 1 unit replaced',
+                gatewayRate: 100,
+                gatewayDetail: '✓ All 4 gateways online',
+                eventBadges: { all: 5, security: 3, device: 2 },
+                timeLabel: 'Yesterday',
+                compLabel: 'vs day before'
+            },
+            week: {
+                healthScore: 89,
+                healthTrend: '↓ vs prev. 7 days -4 · Gateway fluctuations',
+                healthTrendClass: 'down',
+                events: 156,
+                eventsDetail: 'Security 78 · Device 78',
+                offlineDevices: 12,
+                offlineDetail: 'Total offline events · 10 recovered',
+                lowBattery: 23,
+                batteryDetail: 'Replaced 15 · Pending 8',
+                gatewayRate: 82,
+                gatewayDetail: 'Avg uptime · Lowest 75%',
+                eventBadges: { all: 42, security: 25, device: 17 },
+                timeLabel: 'Last 7 Days',
+                compLabel: 'vs prev. 7 days'
+            },
+            month: {
+                healthScore: 91,
+                healthTrend: '↑ vs prev. 30 days +3 · Overall improved',
+                healthTrendClass: 'up',
+                events: 587,
+                eventsDetail: 'Security 298 · Device 289',
+                offlineDevices: 38,
+                offlineDetail: 'Total offline events · All recovered',
+                lowBattery: 89,
+                batteryDetail: 'Replaced 76 · Pending 13',
+                gatewayRate: 94,
+                gatewayDetail: 'Avg uptime · Lowest 72%',
+                eventBadges: { all: 168, security: 95, device: 73 },
+                timeLabel: 'Last 30 Days',
+                compLabel: 'vs prev. 30 days'
+            }
+        };
+
+        // Module data configuration
+        const moduleData = {
+            today: {
+                eventTitle: 'Live Event Stream',
+                deviceTitle: 'Problem Devices',
+                gatewayTitle: 'Gateway Status',
+                gatewayInfo: '4 Total · 1 Offline',
+                watchTitle: 'Rooms to Watch',
+                watchInfo: 'Needs On-site Check',
+                events: [
+                    { time: '13:45:32', type: 'security', typeLabel: 'Security', desc: 'Unauthorized Room Access', room: '0815', level: 'critical' },
+                    { time: '13:42:18', type: 'device', typeLabel: 'Device', desc: 'Gateway Offline >4h', room: '3F-GW-02', level: 'critical' },
+                    { time: '13:30:15', type: 'security', typeLabel: 'Security', desc: 'Auth Failed 3 Times', room: '1205', level: 'warning' },
+                    { time: '13:15:08', type: 'device', typeLabel: 'Device', desc: 'Low Battery Alert (8%)', room: '0402', level: 'warning' },
+                    { time: '13:05:42', type: 'security', typeLabel: 'Security', desc: 'Door Open Timeout (5min)', room: '1008', level: '' },
+                    { time: '12:50:18', type: 'security', typeLabel: 'Security', desc: 'Master Key Used', room: 'Multiple', level: '' }
+                ],
+                offlineDevices: [
+                    { room: '0815', title: 'Device Offline', meta: 'Offline 2h 15m · Related to alert', status: 'critical', statusText: 'Urgent' },
+                    { room: '0308', title: 'Device Offline', meta: 'Offline 1h 30m', status: 'offline', statusText: 'Offline' }
+                ],
+                lowBatteryDevices: [
+                    { room: '0402', title: 'Critical Battery', meta: 'Battery 8% · Est. 1 day left', status: 'critical', statusText: 'Urgent' },
+                    { room: '1008', title: 'Low Battery', meta: 'Battery 15% · Est. 3 days left', status: 'low-battery', statusText: 'Low' }
+                ],
+                gateways: [
+                    { name: '1F-GW-01', info: '32 devices · Excellent', status: 'online', signal: 4 },
+                    { name: '3F-GW-02', info: '28 devices · Offline 4h 15m', status: 'offline', signal: 0 },
+                    { name: '5F-GW-03', info: '30 devices · Weak signal', status: 'weak', signal: 2 },
+                    { name: '7F-GW-04', info: '35 devices · Excellent', status: 'online', signal: 4 }
+                ],
+                watchRooms: [
+                    { room: '0815', color: '#f44336', title: 'Suspected Intrusion + Offline', meta: '13:45 No valid key · Device offline', status: 'critical', statusText: 'Verify' },
+                    { room: '1205', color: '#ff9800', title: 'Repeated Auth Failure', meta: '13:30 Failed 3 times', status: 'low-battery', statusText: 'Notified' },
+                    { room: '0402', color: '#ff9800', title: 'Late Checkout', meta: 'Due 12:00 · Now 5h late', status: 'low-battery', statusText: 'Contacted' }
+                ]
+            },
+            yesterday: {
+                eventTitle: "Yesterday's Events",
+                deviceTitle: "Yesterday's Device Issues",
+                gatewayTitle: "Yesterday's Gateway Status",
+                gatewayInfo: '4 Total · All Online',
+                watchTitle: "Yesterday's Watch List",
+                watchInfo: 'All Resolved',
+                events: [
+                    { time: '16:22:45', type: 'security', typeLabel: 'Security', desc: 'Door Open Timeout (8min)', room: '0912', level: 'warning' },
+                    { time: '14:18:32', type: 'device', typeLabel: 'Device', desc: 'Low Battery Alert (12%)', room: '0603', level: 'warning' },
+                    { time: '11:45:08', type: 'security', typeLabel: 'Security', desc: 'Master Key Used', room: 'Multiple', level: '' },
+                    { time: '09:30:22', type: 'device', typeLabel: 'Device', desc: 'Gateway Brief Offline', room: '1F-GW-01', level: '' },
+                    { time: '08:15:18', type: 'security', typeLabel: 'Security', desc: 'Auth Failed 2 Times', room: '0508', level: '' }
+                ],
+                offlineDevices: [
+                    { room: '0912', title: 'Device Offline', meta: 'Offline 45m · Recovered', status: 'offline', statusText: 'Recovered' }
+                ],
+                lowBatteryDevices: [
+                    { room: '0603', title: 'Low Battery', meta: 'Battery 12% · Replaced', status: 'low-battery', statusText: 'Done' }
+                ],
+                gateways: [
+                    { name: '1F-GW-01', info: '32 devices · Excellent', status: 'online', signal: 4 },
+                    { name: '3F-GW-02', info: '28 devices · Excellent', status: 'online', signal: 4 },
+                    { name: '5F-GW-03', info: '30 devices · Good', status: 'online', signal: 3 },
+                    { name: '7F-GW-04', info: '35 devices · Excellent', status: 'online', signal: 4 }
+                ],
+                watchRooms: [
+                    { room: '0912', color: '#ff9800', title: 'Door Open Timeout', meta: '16:22 Door open 8min', status: 'low-battery', statusText: 'Resolved' },
+                    { room: '0508', color: '#ff9800', title: 'Auth Failure', meta: '08:15 Failed 2x · Worn card', status: 'low-battery', statusText: 'Card Replaced' }
+                ]
+            },
+            week: {
+                eventTitle: 'Weekly Event Summary',
+                deviceTitle: 'Weekly Device Issues',
+                gatewayTitle: 'Weekly Gateway Status',
+                gatewayInfo: '4 Total · 3 Incidents',
+                watchTitle: 'Weekly Watch List',
+                watchInfo: '8 Rooms · 2 Pending',
+                events: [
+                    { time: 'Fri', type: 'security', typeLabel: 'Security', desc: 'Intrusion Alerts: 2', room: '0815/1102', level: 'critical' },
+                    { time: 'Thu', type: 'device', typeLabel: 'Device', desc: 'Gateway Offline: 3 times', room: '3F/5F', level: 'critical' },
+                    { time: 'Wed', type: 'security', typeLabel: 'Security', desc: 'Auth Failures: 12', room: 'Multiple', level: 'warning' },
+                    { time: 'Tue', type: 'device', typeLabel: 'Device', desc: 'Batteries Replaced: 8', room: 'Multiple', level: '' },
+                    { time: 'Mon', type: 'security', typeLabel: 'Security', desc: 'Door Timeouts: 15', room: 'Multiple', level: '' },
+                    { time: 'Week', type: 'device', typeLabel: 'Device', desc: 'Devices Recovered: 10', room: 'Multiple', level: '' }
+                ],
+                offlineDevices: [
+                    { room: '3F', title: '3F Device Offline', meta: '5 incidents · Gateway issue', status: 'critical', statusText: 'Priority' },
+                    { room: '5F', title: '5F Device Offline', meta: '3 incidents · Signal issue', status: 'offline', statusText: 'Monitor' },
+                    { room: '0815', title: 'Multiple Offline', meta: '2 incidents · Hardware suspect', status: 'offline', statusText: 'Check' }
+                ],
+                lowBatteryDevices: [
+                    { room: 'Multi', title: 'Weekly Low Battery', meta: '23 total · 15 replaced', status: 'low-battery', statusText: '8 Left' },
+                    { room: '0402', title: 'Persistent Low', meta: 'Battery 8% · 2 days pending', status: 'critical', statusText: 'Urgent' }
+                ],
+                gateways: [
+                    { name: '1F-GW-01', info: '32 devices · 100% uptime', status: 'online', signal: 4 },
+                    { name: '3F-GW-02', info: '28 devices · 75% uptime', status: 'weak', signal: 2 },
+                    { name: '5F-GW-03', info: '30 devices · 92% uptime', status: 'weak', signal: 3 },
+                    { name: '7F-GW-04', info: '35 devices · 100% uptime', status: 'online', signal: 4 }
+                ],
+                watchRooms: [
+                    { room: '0815', color: '#f44336', title: 'Multiple Intrusion Alerts', meta: '2 this week · Needs inspection', status: 'critical', statusText: 'Verify' },
+                    { room: '3F', color: '#f44336', title: '3F Floor Issues', meta: 'Gateway unstable · 28 devices', status: 'critical', statusText: 'Priority' },
+                    { room: '1102', color: '#ff9800', title: 'Intrusion Alert', meta: 'Wed 1x · Confirmed false alarm', status: 'low-battery', statusText: 'Resolved' }
+                ]
+            },
+            month: {
+                eventTitle: 'Monthly Event Summary',
+                deviceTitle: 'Monthly Device Stats',
+                gatewayTitle: 'Monthly Gateway Status',
+                gatewayInfo: '4 Total · 94% Avg Uptime',
+                watchTitle: 'Monthly Watch Summary',
+                watchInfo: '23 Rooms · All Resolved',
+                events: [
+                    { time: 'Wk4', type: 'security', typeLabel: 'Security', desc: 'Security Events: 78', room: 'Multiple', level: 'warning' },
+                    { time: 'Wk3', type: 'security', typeLabel: 'Security', desc: 'Security Events: 65', room: 'Multiple', level: '' },
+                    { time: 'Wk2', type: 'device', typeLabel: 'Device', desc: 'Device Issues: 89', room: 'Multiple', level: 'warning' },
+                    { time: 'Wk1', type: 'device', typeLabel: 'Device', desc: 'Device Issues: 66', room: 'Multiple', level: '' },
+                    { time: 'Month', type: 'security', typeLabel: 'Stats', desc: 'Intrusion Alerts: 5 · Confirmed: 1', room: 'Multiple', level: 'critical' },
+                    { time: 'Month', type: 'device', typeLabel: 'Stats', desc: 'Batteries Replaced: 76', room: 'All Floors', level: '' }
+                ],
+                offlineDevices: [
+                    { room: 'Hotel', title: 'Monthly Offline Stats', meta: '38 incidents · All recovered', status: 'offline', statusText: 'Recovered' },
+                    { room: '3F', title: '3F Most Incidents', meta: '15 incidents · Gateway optimized', status: 'low-battery', statusText: 'Optimized' },
+                    { room: '5F', title: '5F Second Most', meta: '8 incidents · Signal boosted', status: 'low-battery', statusText: 'Done' }
+                ],
+                lowBatteryDevices: [
+                    { room: 'Hotel', title: 'Monthly Battery Stats', meta: '89 alerts · 76 replaced', status: 'low-battery', statusText: '13 Left' },
+                    { room: '3F', title: '3F Most Replaced', meta: '22 batteries replaced', status: 'offline', statusText: 'Normal' }
+                ],
+                gateways: [
+                    { name: '1F-GW-01', info: '32 devices · 99.8% uptime', status: 'online', signal: 4 },
+                    { name: '3F-GW-02', info: '28 devices · 88% uptime', status: 'weak', signal: 2 },
+                    { name: '5F-GW-03', info: '30 devices · 95% uptime', status: 'online', signal: 3 },
+                    { name: '7F-GW-04', info: '35 devices · 99.5% uptime', status: 'online', signal: 4 }
+                ],
+                watchRooms: [
+                    { room: 'Stats', color: '#4CAF50', title: 'Monthly Completed', meta: '23 rooms resolved', status: 'offline', statusText: 'Done' },
+                    { room: '3F', color: '#ff9800', title: '3F Focus Area', meta: 'Most incidents · Enhanced patrol', status: 'low-battery', statusText: 'Monitoring' }
+                ]
+            }
+        };
+
+        // Time Filter Handler
+        function onTimeFilterChange(value) {
+            const timeLabels = {
+                'today': 'Today',
+                'yesterday': 'Yesterday',
+                'week': 'Last 7 Days',
+                'month': 'Last 30 Days'
+            };
+            
+            console.log('Time filter changed to:', timeLabels[value]);
+            
+            // Update all modules with time-dependent data
+            updateDashboardData(value);
+        }
+
+        // Update dashboard data based on time range
+        function updateDashboardData(timeRange) {
+            const data = mockData[timeRange] || mockData.today;
+            const modData = moduleData[timeRange] || moduleData.today;
+            const statCards = document.querySelectorAll('.stat-card');
+            const moduleCards = document.querySelectorAll('.module-card');
+            
+            // Add fade effect
+            statCards.forEach(card => card.style.opacity = '0.5');
+            moduleCards.forEach(card => card.style.opacity = '0.7');
+            
+            setTimeout(() => {
+                // Update stat cards
+                if (statCards[0]) {
+                    statCards[0].querySelector('.value').innerHTML = data.healthScore + '<small>/100</small>';
+                    statCards[0].querySelector('.trend').textContent = data.healthTrend;
+                    statCards[0].querySelector('.trend').className = 'trend ' + data.healthTrendClass;
+                }
+                
+                if (statCards[1]) {
+                    statCards[1].querySelector('.label').textContent = 'Events (' + data.timeLabel + ')';
+                    statCards[1].querySelector('.value').textContent = data.events;
+                    statCards[1].querySelector('.trend').textContent = data.eventsDetail;
+                }
+                
+                if (statCards[2]) {
+                    statCards[2].querySelector('.value').textContent = data.offlineDevices;
+                    statCards[2].querySelector('.trend').innerHTML = data.offlineDetail;
+                }
+                
+                if (statCards[3]) {
+                    statCards[3].querySelector('.value').textContent = data.lowBattery;
+                    statCards[3].querySelector('.trend').innerHTML = data.batteryDetail;
+                }
+                
+                if (statCards[4]) {
+                    statCards[4].querySelector('.value').innerHTML = data.gatewayRate + '<small>%</small>';
+                    statCards[4].querySelector('.trend').innerHTML = data.gatewayDetail;
+                }
+                
+                // Update event stream badge counts
+                const moduleTabs = document.querySelectorAll('.module-tabs .module-tab');
+                moduleTabs.forEach(tab => {
+                    const badge = tab.querySelector('.badge');
+                    if (badge) {
+                        const tabType = tab.dataset.tab;
+                        if (data.eventBadges[tabType] !== undefined) {
+                            badge.textContent = data.eventBadges[tabType];
+                        }
+                    }
+                });
+                
+                // Update Module 1: Event Stream
+                if (moduleCards[0]) {
+                    const h3 = moduleCards[0].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.eventTitle + '\n                            '));
+                    }
+                    const eventList = moduleCards[0].querySelector('.event-list[data-panel="all"]');
+                    if (eventList && modData.events) {
+                        eventList.innerHTML = modData.events.map(e => `
+                            <div class="event-item ${e.level}">
+                                <div class="event-time">${e.time}</div>
+                                <span class="event-type ${e.type}">${e.typeLabel}</span>
+                                <div class="event-desc">${e.desc}</div>
+                                <span class="event-room">${e.room}</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                // Update Module 2: Problem Devices
+                if (moduleCards[1]) {
+                    const h3 = moduleCards[1].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.deviceTitle + '\n                            '));
+                    }
+                    const offlineBadge = moduleCards[1].querySelector('.module-tab[data-tab="offline"] .badge');
+                    if (offlineBadge) offlineBadge.textContent = modData.offlineDevices.length;
+                    const batteryBadge = moduleCards[1].querySelector('.module-tab[data-tab="low-battery"] .badge');
+                    if (batteryBadge) batteryBadge.textContent = modData.lowBatteryDevices.length;
+                    
+                    const offlineList = moduleCards[1].querySelector('.device-list[data-panel="offline"]');
+                    if (offlineList && modData.offlineDevices) {
+                        offlineList.innerHTML = modData.offlineDevices.map(d => `
+                            <div class="device-item">
+                                <div class="room-badge">${d.room}</div>
+                                <div class="device-info">
+                                    <div class="title">${d.title}</div>
+                                    <div class="meta">${d.meta}</div>
+                                </div>
+                                <span class="status-badge ${d.status}">${d.statusText}</span>
+                            </div>
+                        `).join('');
+                    }
+                    const batteryList = moduleCards[1].querySelector('.device-list[data-panel="low-battery"]');
+                    if (batteryList && modData.lowBatteryDevices) {
+                        batteryList.innerHTML = modData.lowBatteryDevices.map(d => `
+                            <div class="device-item">
+                                <div class="room-badge">${d.room}</div>
+                                <div class="device-info">
+                                    <div class="title">${d.title}</div>
+                                    <div class="meta">${d.meta}</div>
+                                </div>
+                                <span class="status-badge ${d.status}">${d.statusText}</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                // Update Module 3: Gateway Status
+                if (moduleCards[2]) {
+                    const h3 = moduleCards[2].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.gatewayTitle + '\n                            '));
+                    }
+                    const moreLink = moduleCards[2].querySelector('.module-header .more-link');
+                    if (moreLink) moreLink.textContent = modData.gatewayInfo;
+                    
+                    const gatewayGrid = moduleCards[2].querySelector('.gateway-grid');
+                    if (gatewayGrid && modData.gateways) {
+                        gatewayGrid.innerHTML = modData.gateways.map(g => {
+                            const statusClass = g.status === 'offline' ? 'offline' : (g.status === 'weak' ? 'weak' : '');
+                            const cardClass = g.status === 'offline' ? 'offline' : '';
+                            const signalBars = [1,2,3,4].map(i => 
+                                `<div class="signal-bar ${i <= g.signal ? 'active' : ''}"></div>`
+                            ).join('');
+                            return `
+                                <div class="gateway-card ${cardClass}">
+                                    <div class="gateway-header">
+                                        <div class="gateway-status ${statusClass}"></div>
+                                        <div class="gateway-name">${g.name}</div>
+                                    </div>
+                                    <div class="gateway-info">${g.info}</div>
+                                    <div class="signal-bars">${signalBars}</div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+                
+                // Update Module 4: Watch Rooms
+                if (moduleCards[3]) {
+                    const h3 = moduleCards[3].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.watchTitle + '\n                            '));
+                    }
+                    const moreLink = moduleCards[3].querySelector('.module-header .more-link');
+                    if (moreLink) moreLink.textContent = modData.watchInfo;
+                    
+                    const deviceList = moduleCards[3].querySelector('.device-list');
+                    if (deviceList && modData.watchRooms) {
+                        deviceList.innerHTML = modData.watchRooms.map(r => `
+                            <div class="device-item">
+                                <div class="room-badge" style="background: linear-gradient(135deg, ${r.color} 0%, ${r.color}cc 100%);">${r.room}</div>
+                                <div class="device-info">
+                                    <div class="title">${r.title}</div>
+                                    <div class="meta">${r.meta}</div>
+                                </div>
+                                <span class="status-badge ${r.status}">${r.statusText}</span>
+                            </div>
+                        `).join('');
+                    }
+                }
+                
+                // Update AI insight cards
+                document.querySelectorAll('.insight-text').forEach(el => {
+                    el.textContent = el.textContent.replace(/today|yesterday|this week|this month/gi, data.timeLabel.toLowerCase());
+                });
+                
+                // Restore display
+                statCards.forEach(card => card.style.opacity = '1');
+                moduleCards.forEach(card => card.style.opacity = '1');
+                
+                // Trigger number animation
+                animateNumbers();
+            }, 200);
         }
 
         // Refresh Data

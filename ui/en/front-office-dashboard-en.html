@@ -347,6 +347,52 @@
             font-size: 12px;
         }
 
+        /* Time Filter */
+        .time-filter {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+
+        .time-filter-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .time-filter-select {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #c9a961;
+            border-radius: 4px;
+            color: #c9a961;
+            padding: 6px 28px 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23c9a961'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            min-width: 110px;
+        }
+
+        .time-filter-select:hover {
+            background-color: rgba(201, 169, 97, 0.2);
+        }
+
+        .time-filter-select:focus {
+            border-color: #d4b76a;
+            box-shadow: 0 0 0 2px rgba(201, 169, 97, 0.3);
+        }
+
+        .time-filter-select option {
+            background: #1a2a4a;
+            color: #c9a961;
+            padding: 8px;
+        }
+
         /* Dashboard Sub-navigation */
         .dashboard-tabs {
             background: #c9a961;
@@ -1313,6 +1359,15 @@
                     <span>Front Office Operations Agent</span>
                 </div>
                 <div class="dashboard-actions">
+                    <div class="time-filter">
+                        <span class="time-filter-label">Time Range:</span>
+                        <select class="time-filter-select" id="timeFilter" onchange="onTimeFilterChange(this.value)">
+                            <option value="today" selected>Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month">Last 30 Days</option>
+                        </select>
+                    </div>
                     <span class="refresh-time">Updated at <span id="updateTime">17:06:23</span></span>
                     <button class="btn-refresh" onclick="exportDashboardPdf()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19 8H5c-1.66 0-3 1.34-3 3v4h4v4h12v-4h4v-4c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-9a1 1 0 110 2 1 1 0 010-2zM18 3H6v4h12V3z"/></svg>
@@ -1877,6 +1932,347 @@
                     });
                 });
             });
+        }
+
+        // Mock data for different time ranges
+        const mockData = {
+            today: {
+                occupancyLabel: 'Current Occupancy',
+                occupancyRate: 78.5,
+                occupancyTrend: '↑ vs yesterday +3.2% · Occupied 122/156',
+                occupancyTrendClass: 'up',
+                checkInLabel: 'Today Check-ins',
+                checkIn: 42,
+                checkInDetail: 'Pending 18 · Done 24',
+                checkOutLabel: 'Today Check-outs',
+                checkOut: 38,
+                checkOutDetail: 'Pending 15 · Done 23',
+                alertLabel: 'Alerts',
+                alerts: 3,
+                alertDetail: '⚠️ Late checkout · Expiring soon 5',
+                stayLabel: 'Avg. Stay Duration',
+                avgStay: 2.3,
+                stayTrend: '↓ vs yesterday -0.2 days',
+                stayTrendClass: 'down'
+            },
+            yesterday: {
+                occupancyLabel: 'Yesterday Occupancy',
+                occupancyRate: 75.3,
+                occupancyTrend: '↓ vs day before -1.8% · Occupied 117/156',
+                occupancyTrendClass: 'down',
+                checkInLabel: 'Yesterday Check-ins',
+                checkIn: 35,
+                checkInDetail: 'All completed',
+                checkOutLabel: 'Yesterday Check-outs',
+                checkOut: 41,
+                checkOutDetail: 'All completed',
+                alertLabel: 'Yesterday Alerts',
+                alerts: 1,
+                alertDetail: '✓ All resolved',
+                stayLabel: 'Yesterday Avg. Stay',
+                avgStay: 2.5,
+                stayTrend: '↑ vs day before +0.1 days',
+                stayTrendClass: 'up'
+            },
+            week: {
+                occupancyLabel: 'Weekly Avg. Occupancy',
+                occupancyRate: 72.8,
+                occupancyTrend: '↓ vs prev. 7 days -2.1% · Daily avg 114/156',
+                occupancyTrendClass: 'down',
+                checkInLabel: 'Weekly Check-ins',
+                checkIn: 287,
+                checkInDetail: 'Daily avg 41 · Peak Fri 58',
+                checkOutLabel: 'Weekly Check-outs',
+                checkOut: 265,
+                checkOutDetail: 'Daily avg 38 · Peak Sun 52',
+                alertLabel: 'Weekly Alert Stats',
+                alerts: 12,
+                alertDetail: 'Resolved 10 · Pending 2',
+                stayLabel: 'Weekly Avg. Stay',
+                avgStay: 2.4,
+                stayTrend: '→ vs prev. 7 days stable',
+                stayTrendClass: 'neutral'
+            },
+            month: {
+                occupancyLabel: 'Monthly Avg. Occupancy',
+                occupancyRate: 76.2,
+                occupancyTrend: '↑ vs prev. 30 days +4.5% · Daily avg 119/156',
+                occupancyTrendClass: 'up',
+                checkInLabel: 'Monthly Check-ins',
+                checkIn: 1245,
+                checkInDetail: 'Daily avg 41 · Peak Jan 3 68',
+                checkOutLabel: 'Monthly Check-outs',
+                checkOut: 1189,
+                checkOutDetail: 'Daily avg 40 · Peak Jan 4 61',
+                alertLabel: 'Monthly Alert Stats',
+                alerts: 47,
+                alertDetail: 'Resolved 45 · Pending 2',
+                stayLabel: 'Monthly Avg. Stay',
+                avgStay: 2.6,
+                stayTrend: '↑ vs prev. 30 days +0.3 days',
+                stayTrendClass: 'up'
+            }
+        };
+
+        // Module data configuration (titles + data)
+        const moduleData = {
+            today: {
+                // Titles
+                roomStatusTitle: "Today's Room Status",
+                roomStatusTab1: 'Check-out',
+                roomStatusTab2: 'Check-in',
+                durationTitle: 'Stay Duration Distribution',
+                durationTotal: 'Total 124 Staying',
+                roomTypeTitle: 'Room Type Stats',
+                roomTypeTotal: 'Total 156 Rooms',
+                trendTitle: 'Occupancy Trend (Last 7 Days)',
+                peakTitle: 'Weekly Check-in Peak Hours',
+                // Duration data
+                duration: [
+                    { count: 56, pct: 45 },  // Day Use
+                    { count: 40, pct: 32 },  // Short Stay
+                    { count: 22, pct: 18 },  // Medium Stay
+                    { count: 6, pct: 5 }     // Long Stay
+                ],
+                durationSummary: 'Avg Stay <strong>2.3</strong> days',
+                durationCheckout: 'Expected checkout <strong>38</strong> rooms',
+                // Room type data
+                roomType: [
+                    { occupied: 45, total: 60, rate: 75 },  // King
+                    { occupied: 38, total: 45, rate: 84 },  // Twin
+                    { occupied: 21, total: 30, rate: 70 },  // Suite
+                    { occupied: 14, total: 21, rate: 67 }   // Other
+                ]
+            },
+            yesterday: {
+                roomStatusTitle: "Yesterday's Room Status",
+                roomStatusTab1: 'Check-out',
+                roomStatusTab2: 'Check-in',
+                durationTitle: "Yesterday's Duration Distribution",
+                durationTotal: 'Total 117 Stayed',
+                roomTypeTitle: "Yesterday's Room Type Stats",
+                roomTypeTotal: 'Total 156 Rooms',
+                trendTitle: 'Occupancy Trend (Last 7 Days)',
+                peakTitle: "Yesterday's Peak Hours",
+                duration: [
+                    { count: 52, pct: 44 },
+                    { count: 38, pct: 33 },
+                    { count: 21, pct: 18 },
+                    { count: 6, pct: 5 }
+                ],
+                durationSummary: 'Avg Stay <strong>2.5</strong> days',
+                durationCheckout: 'Checked out <strong>41</strong> rooms',
+                roomType: [
+                    { occupied: 42, total: 60, rate: 70 },
+                    { occupied: 35, total: 45, rate: 78 },
+                    { occupied: 22, total: 30, rate: 73 },
+                    { occupied: 18, total: 21, rate: 86 }
+                ]
+            },
+            week: {
+                roomStatusTitle: 'Weekly Room Status',
+                roomStatusTab1: 'Check-outs',
+                roomStatusTab2: 'Check-ins',
+                durationTitle: 'Weekly Duration Distribution',
+                durationTotal: 'Daily Avg 114 Staying',
+                roomTypeTitle: 'Weekly Room Type Stats',
+                roomTypeTotal: 'Total 156 Rooms',
+                trendTitle: 'Occupancy Trend (Last 7 Days)',
+                peakTitle: 'Weekly Check-in Peak Hours',
+                duration: [
+                    { count: 48, pct: 42 },
+                    { count: 39, pct: 34 },
+                    { count: 20, pct: 18 },
+                    { count: 7, pct: 6 }
+                ],
+                durationSummary: 'Weekly Avg <strong>2.4</strong> days',
+                durationCheckout: 'Checked out <strong>265</strong> rooms',
+                roomType: [
+                    { occupied: 41, total: 60, rate: 68 },
+                    { occupied: 36, total: 45, rate: 80 },
+                    { occupied: 20, total: 30, rate: 67 },
+                    { occupied: 17, total: 21, rate: 81 }
+                ]
+            },
+            month: {
+                roomStatusTitle: 'Monthly Room Status',
+                roomStatusTab1: 'Check-outs',
+                roomStatusTab2: 'Check-ins',
+                durationTitle: 'Monthly Duration Distribution',
+                durationTotal: 'Daily Avg 119 Staying',
+                roomTypeTitle: 'Monthly Room Type Stats',
+                roomTypeTotal: 'Total 156 Rooms',
+                trendTitle: 'Occupancy Trend (Last 30 Days)',
+                peakTitle: 'Monthly Check-in Peak Hours',
+                duration: [
+                    { count: 51, pct: 43 },
+                    { count: 40, pct: 34 },
+                    { count: 21, pct: 17 },
+                    { count: 7, pct: 6 }
+                ],
+                durationSummary: 'Monthly Avg <strong>2.6</strong> days',
+                durationCheckout: 'Checked out <strong>1189</strong> rooms',
+                roomType: [
+                    { occupied: 44, total: 60, rate: 73 },
+                    { occupied: 37, total: 45, rate: 82 },
+                    { occupied: 22, total: 30, rate: 73 },
+                    { occupied: 16, total: 21, rate: 76 }
+                ]
+            }
+        };
+
+        // Time filter handler
+        function onTimeFilterChange(value) {
+            console.log('Time filter changed to:', value);
+            updateDashboardData(value);
+        }
+
+        // Update dashboard data based on time range
+        function updateDashboardData(timeRange) {
+            const data = mockData[timeRange] || mockData.today;
+            const modData = moduleData[timeRange] || moduleData.today;
+            const statCards = document.querySelectorAll('.stat-card');
+            const moduleCards = document.querySelectorAll('.module-card');
+            
+            // Add fade effect
+            statCards.forEach(card => card.style.opacity = '0.5');
+            moduleCards.forEach(card => card.style.opacity = '0.7');
+            
+            setTimeout(() => {
+                // Card 1: Occupancy
+                if (statCards[0]) {
+                    statCards[0].querySelector('.label').textContent = data.occupancyLabel;
+                    statCards[0].querySelector('.value').innerHTML = data.occupancyRate + '<small>%</small>';
+                    statCards[0].querySelector('.trend').textContent = data.occupancyTrend;
+                    statCards[0].querySelector('.trend').className = 'trend ' + data.occupancyTrendClass;
+                }
+                
+                // Card 2: Check-ins
+                if (statCards[1]) {
+                    statCards[1].querySelector('.label').textContent = data.checkInLabel;
+                    statCards[1].querySelector('.value').textContent = data.checkIn;
+                    statCards[1].querySelector('.trend').textContent = data.checkInDetail;
+                }
+                
+                // Card 3: Check-outs
+                if (statCards[2]) {
+                    statCards[2].querySelector('.label').textContent = data.checkOutLabel;
+                    statCards[2].querySelector('.value').textContent = data.checkOut;
+                    statCards[2].querySelector('.trend').textContent = data.checkOutDetail;
+                }
+                
+                // Card 4: Alerts
+                if (statCards[3]) {
+                    statCards[3].querySelector('.label').textContent = data.alertLabel;
+                    statCards[3].querySelector('.value').textContent = data.alerts;
+                    statCards[3].querySelector('.trend').innerHTML = data.alertDetail;
+                }
+                
+                // Card 5: Stay Duration
+                if (statCards[4]) {
+                    statCards[4].querySelector('.label').textContent = data.stayLabel;
+                    statCards[4].querySelector('.value').innerHTML = data.avgStay + '<small> days</small>';
+                    statCards[4].querySelector('.trend').textContent = data.stayTrend;
+                    statCards[4].querySelector('.trend').className = 'trend ' + data.stayTrendClass;
+                }
+                
+                // Update Module 1: Room Status
+                if (moduleCards[0]) {
+                    const h3 = moduleCards[0].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.roomStatusTitle + '\n                            '));
+                    }
+                    const tabs = moduleCards[0].querySelectorAll('.module-tab');
+                    if (tabs[0]) tabs[0].innerHTML = modData.roomStatusTab1 + ' <span class="badge">4</span>';
+                    if (tabs[1]) tabs[1].innerHTML = modData.roomStatusTab2 + ' <span class="badge warning">4</span>';
+                }
+                
+                // Update Module 2: Duration Distribution
+                if (moduleCards[1]) {
+                    const h3 = moduleCards[1].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.durationTitle + '\n                            '));
+                    }
+                    const moreLink = moduleCards[1].querySelector('.module-header .more-link');
+                    if (moreLink) moreLink.textContent = modData.durationTotal;
+                    
+                    // Update duration distribution data
+                    const durationItems = moduleCards[1].querySelectorAll('.duration-item');
+                    durationItems.forEach((item, i) => {
+                        if (modData.duration[i]) {
+                            const d = modData.duration[i];
+                            item.querySelector('.duration-bar').style.width = d.pct + '%';
+                            item.querySelector('.duration-count').textContent = d.count;
+                            item.querySelector('.duration-pct').textContent = d.pct + '%';
+                        }
+                    });
+                    
+                    // Update summary
+                    const summary = moduleCards[1].querySelector('.duration-summary');
+                    if (summary) {
+                        summary.innerHTML = '<span>' + modData.durationSummary + '</span><span>' + modData.durationCheckout + '</span>';
+                    }
+                }
+                
+                // Update Module 3: Room Type Stats
+                if (moduleCards[2]) {
+                    const h3 = moduleCards[2].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.roomTypeTitle + '\n                            '));
+                    }
+                    const moreLink = moduleCards[2].querySelector('.module-header .more-link');
+                    if (moreLink) moreLink.textContent = modData.roomTypeTotal;
+                    
+                    // Update room type data
+                    const roomTypeItems = moduleCards[2].querySelectorAll('.room-type-item');
+                    roomTypeItems.forEach((item, i) => {
+                        if (modData.roomType[i]) {
+                            const r = modData.roomType[i];
+                            item.querySelector('.bar-fill').style.width = r.rate + '%';
+                            item.querySelector('.occupied').textContent = r.occupied;
+                            item.querySelector('.rate').textContent = r.rate + '%';
+                        }
+                    });
+                }
+                
+                // Update Module 4: Occupancy Trend
+                if (moduleCards[3]) {
+                    const h3 = moduleCards[3].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.trendTitle + '\n                            '));
+                    }
+                }
+                
+                // Update Module 5: Peak Hours
+                if (moduleCards[4]) {
+                    const h3 = moduleCards[4].querySelector('.module-header h3');
+                    if (h3) {
+                        const svg = h3.querySelector('svg');
+                        h3.innerHTML = '';
+                        h3.appendChild(svg);
+                        h3.appendChild(document.createTextNode('\n                                ' + modData.peakTitle + '\n                            '));
+                    }
+                }
+                
+                // Restore display
+                statCards.forEach(card => card.style.opacity = '1');
+                moduleCards.forEach(card => card.style.opacity = '1');
+                
+                // Trigger number animation
+                animateNumbers();
+            }, 200);
         }
 
         // Number Rolling Animation
