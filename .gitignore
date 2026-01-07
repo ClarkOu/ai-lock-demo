@@ -2,6 +2,11 @@
 docs/
 drafts/
 
+# 数据文件 - 不上传
+*.sql
+*.xlsx
+*.xls
+
 # macOS
 .DS_Store
 */.DS_Store
