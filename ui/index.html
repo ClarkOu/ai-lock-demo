@@ -640,6 +640,73 @@
             color: #dc2626;
         }
 
+        /* 兼容新版收件人卡片（ns-rc-*） */
+        .ns-rc-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .ns-rc-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .ns-rc-email {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a2a4a;
+            word-break: break-all;
+        }
+
+        .ns-rc-name {
+            font-size: 11px;
+            color: rgba(26, 42, 74, 0.65);
+        }
+
+        .ns-rc-actions {
+            display: flex;
+            gap: 6px;
+            align-items: flex-start;
+            flex-shrink: 0;
+        }
+
+        .ns-rc-actions button {
+            border: none;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1;
+            background: rgba(26, 42, 74, 0.06);
+            color: #1a2a4a;
+        }
+
+        .ns-rc-actions button:hover {
+            background: rgba(26, 42, 74, 0.10);
+        }
+
+        .ns-rc-actions button.del {
+            background: rgba(220, 38, 38, 0.10);
+            color: #b91c1c;
+        }
+
+        .ns-rc-actions button.del:hover {
+            background: rgba(220, 38, 38, 0.16);
+        }
+
+        .ns-rc-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+            grid-column: 1 / -1;
+        }
+
         .ns-add-recipient {
             display: flex;
             gap: 8px;
@@ -733,6 +800,154 @@
             justify-content: flex-end;
             padding: 12px 14px;
             border-top: 1px solid rgba(26, 42, 74, 0.10);
+        }
+
+        .ns-editor-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            padding: 12px 14px;
+            border-top: 1px solid rgba(26, 42, 74, 0.10);
+            background: #f8f9fa;
+        }
+
+        .ns-editor-footer button {
+            border: none;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .ns-editor-footer .btn-secondary {
+            background: rgba(26, 42, 74, 0.08);
+            color: #1a2a4a;
+        }
+
+        .ns-editor-footer .btn-secondary:hover {
+            background: rgba(26, 42, 74, 0.12);
+        }
+
+        .ns-editor-footer .btn-primary {
+            background: #c9a961;
+            color: #1a2a4a;
+            font-weight: 700;
+        }
+
+        .ns-editor-footer .btn-primary:hover {
+            filter: brightness(0.96);
+        }
+
+        /* 新版区块样式 */
+        .ns-section {
+            background: rgba(26, 42, 74, 0.03);
+            border: 1px solid rgba(26, 42, 74, 0.08);
+            border-radius: 10px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+
+        .ns-section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: rgba(26, 42, 74, 0.04);
+            border-bottom: 1px solid rgba(26, 42, 74, 0.06);
+        }
+
+        .ns-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .ns-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #c9a961;
+        }
+
+        .ns-toggle-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a2a4a;
+        }
+
+        .ns-section-desc {
+            font-size: 11px;
+            color: rgba(26, 42, 74, 0.5);
+        }
+
+        .ns-section-body {
+            padding: 12px;
+            display: none;
+        }
+
+        .ns-section-body.show {
+            display: block;
+        }
+
+        .ns-sub-label {
+            font-size: 12px;
+            color: rgba(26, 42, 74, 0.65);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .ns-digest-grid {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ns-digest-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .ns-digest-item label {
+            font-size: 11px;
+            color: rgba(26, 42, 74, 0.55);
+        }
+
+        .ns-digest-item select {
+            padding: 6px 10px;
+            border: 1px solid rgba(26, 42, 74, 0.15);
+            border-radius: 6px;
+            font-size: 12px;
+            background: #fff;
+            min-width: 80px;
+        }
+
+        .ns-weekday-checks {
+            display: flex;
+            gap: 2px;
+            flex-wrap: wrap;
+        }
+
+        .ns-weekday-checks label {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 6px;
+            background: rgba(26, 42, 74, 0.06);
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .ns-weekday-checks label:has(input:checked) {
+            background: #c9a961;
+            color: #1a2a4a;
+        }
+
+        .ns-weekday-checks input {
+            display: none;
         }
 
         .notify-settings-actions {
@@ -1945,40 +2160,6 @@
                     </div>
                 </div>
 
-                <div class="notify-settings-section">
-                    <div class="sec-title">
-                        <span>全局设置</span>
-                    </div>
-                    <div class="ns-row">
-                        <div class="ns-label">报警去重</div>
-                        <select class="ns-select" id="nsDedupe">
-                            <option value="5">5 分钟内相同告警仅发一次</option>
-                            <option value="15">15 分钟内相同告警仅发一次</option>
-                            <option value="30">30 分钟内相同告警仅发一次</option>
-                            <option value="60">60 分钟内相同告警仅发一次</option>
-                        </select>
-                    </div>
-                    <div class="ns-row">
-                        <div class="ns-label">定时汇报</div>
-                        <div class="ns-options" style="gap:6px">
-                            <select class="ns-select" id="nsDigestFreq" style="width:auto" onchange="updateNotifySettingsDigestWeekdayVisibility()">
-                                <option value="daily">每日</option>
-                                <option value="weekly">每周</option>
-                            </select>
-                            <select class="ns-select" id="nsDigestWeekday" style="width:auto;display:none">
-                                <option value="mon">周一</option>
-                                <option value="tue">周二</option>
-                                <option value="wed">周三</option>
-                                <option value="thu">周四</option>
-                                <option value="fri">周五</option>
-                                <option value="sat">周六</option>
-                                <option value="sun">周日</option>
-                            </select>
-                            <input class="ns-input" id="nsDigestTime" type="time" value="09:00" style="width:auto">
-                        </div>
-                    </div>
-                </div>
-
                 <div class="notify-settings-preview" id="notifySettingsPreview"></div>
             </div>
             <div class="notify-settings-actions">
@@ -2006,27 +2187,74 @@
                     <div class="ns-label">姓名/备注</div>
                     <input class="ns-input" id="nsEditName" placeholder="可选">
                 </div>
-                <div class="ns-row">
-                    <div class="ns-label">订阅类型</div>
-                    <div class="ns-options">
-                        <label class="ns-check"><input type="checkbox" id="nsEditTypeAlert">异常报警</label>
-                        <label class="ns-check"><input type="checkbox" id="nsEditTypeDigest">定时汇报</label>
+                
+                <!-- 即时告警区块 -->
+                <div class="ns-section">
+                    <div class="ns-section-header">
+                        <label class="ns-toggle">
+                            <input type="checkbox" id="nsEditAlertEnabled" onchange="toggleAlertSection()">
+                            <span class="ns-toggle-label">即时告警</span>
+                        </label>
+                        <span class="ns-section-desc">发生异常时立即发送邮件</span>
+                    </div>
+                    <div class="ns-section-body" id="nsAlertSection">
+                        <div class="ns-sub-label">接收的告警等级</div>
+                        <div class="ns-options">
+                            <label class="ns-check"><input type="checkbox" id="nsEditLevelUrgent">紧急</label>
+                            <label class="ns-check"><input type="checkbox" id="nsEditLevelWarning">待处理</label>
+                            <label class="ns-check"><input type="checkbox" id="nsEditLevelInfo">建议</label>
+                        </div>
                     </div>
                 </div>
-                <div class="ns-row">
-                    <div class="ns-label">告警等级</div>
-                    <div class="ns-options">
-                        <label class="ns-check"><input type="checkbox" id="nsEditLevelUrgent">紧急</label>
-                        <label class="ns-check"><input type="checkbox" id="nsEditLevelWarning">警告</label>
-                        <label class="ns-check"><input type="checkbox" id="nsEditLevelInfo">提示</label>
+                
+                <!-- 定时汇报区块 -->
+                <div class="ns-section">
+                    <div class="ns-section-header">
+                        <label class="ns-toggle">
+                            <input type="checkbox" id="nsEditDigestEnabled" onchange="toggleDigestSection()">
+                            <span class="ns-toggle-label">定时汇报</span>
+                        </label>
+                        <span class="ns-section-desc">定时发送统计摘要邮件</span>
                     </div>
-                </div>
-                <div class="ns-row">
-                    <div class="ns-label">模块范围</div>
-                    <div class="ns-options">
-                        <label class="ns-check"><input type="checkbox" id="nsEditModFront">前厅</label>
-                        <label class="ns-check"><input type="checkbox" id="nsEditModSecurity">安保</label>
-                        <label class="ns-check"><input type="checkbox" id="nsEditModDevice">设备</label>
+                    <div class="ns-section-body" id="nsDigestSection">
+                        <div class="ns-digest-grid">
+                            <div class="ns-digest-item">
+                                <label>频率</label>
+                                <select id="nsEditDigestFreq" onchange="toggleDigestWeekday()">
+                                    <option value="daily">每天</option>
+                                    <option value="weekly">每周</option>
+                                </select>
+                            </div>
+                            <div class="ns-digest-item" id="nsDigestWeekdayRow" style="display:none">
+                                <label>发送日</label>
+                                <div class="ns-weekday-checks">
+                                    <label><input type="checkbox" id="nsEditWeekday1" value="1">一</label>
+                                    <label><input type="checkbox" id="nsEditWeekday2" value="2">二</label>
+                                    <label><input type="checkbox" id="nsEditWeekday3" value="3">三</label>
+                                    <label><input type="checkbox" id="nsEditWeekday4" value="4">四</label>
+                                    <label><input type="checkbox" id="nsEditWeekday5" value="5">五</label>
+                                    <label><input type="checkbox" id="nsEditWeekday6" value="6">六</label>
+                                    <label><input type="checkbox" id="nsEditWeekday0" value="0">日</label>
+                                </div>
+                            </div>
+                            <div class="ns-digest-item">
+                                <label>时间</label>
+                                <select id="nsEditDigestTime">
+                                    <option value="08:00">08:00</option>
+                                    <option value="09:00">09:00</option>
+                                    <option value="10:00">10:00</option>
+                                    <option value="12:00">12:00</option>
+                                    <option value="14:00">14:00</option>
+                                    <option value="18:00">18:00</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="ns-sub-label" style="margin-top:12px">汇报内容</div>
+                        <div class="ns-options">
+                            <label class="ns-check"><input type="checkbox" id="nsEditDigestPending" checked>待处理告警统计</label>
+                            <label class="ns-check"><input type="checkbox" id="nsEditDigestResolved" checked>已处理告警统计</label>
+                            <label class="ns-check"><input type="checkbox" id="nsEditDigestHealth">设备健康概览</label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3034,19 +3262,6 @@
             currentSettings = loadNotifyEmailSettings();
             renderRecipientList();
             
-            // 全局设置回显
-            const dedupe = document.getElementById('nsDedupe');
-            const digestFreq = document.getElementById('nsDigestFreq');
-            const digestWeekday = document.getElementById('nsDigestWeekday');
-            const digestTime = document.getElementById('nsDigestTime');
-            
-            if (dedupe) dedupe.value = String(currentSettings.dedupeMinutes || 30);
-            if (digestFreq) digestFreq.value = currentSettings.digest?.frequency || 'daily';
-            if (digestWeekday) digestWeekday.value = currentSettings.digest?.weekday || 'mon';
-            if (digestTime) digestTime.value = currentSettings.digest?.time || '09:00';
-            
-            updateNotifySettingsDigestWeekdayVisibility();
-            
             overlay.classList.add('show');
         }
 
@@ -3065,19 +3280,29 @@
             }
 
             container.innerHTML = currentSettings.recipients.map((r, i) => {
-                const types = [];
-                if (r.types.alert) types.push('报警');
-                if (r.types.digest) types.push('汇报');
+                // 即时告警状态
+                const alertEnabled = r.alert?.enabled !== false;
+                const alertLevels = [];
+                if (alertEnabled) {
+                    if (r.alert?.levels?.urgent !== false) alertLevels.push('紧急');
+                    if (r.alert?.levels?.warning !== false) alertLevels.push('待处理');
+                    if (r.alert?.levels?.info) alertLevels.push('建议');
+                }
                 
-                const levels = [];
-                if (r.levels.urgent) levels.push('紧急');
-                if (r.levels.warning) levels.push('警告');
-                if (r.levels.info) levels.push('提示');
-                
-                const modules = [];
-                if (r.modules.front) modules.push('前厅');
-                if (r.modules.security) modules.push('安保');
-                if (r.modules.device) modules.push('设备');
+                // 定时汇报状态
+                const digestEnabled = r.digest?.enabled;
+                let digestDesc = '';
+                if (digestEnabled) {
+                    const freq = r.digest?.frequency;
+                    const time = r.digest?.time || '09:00';
+                    if (freq === 'weekly') {
+                        const dayNames = {0:'日',1:'一',2:'二',3:'三',4:'四',5:'五',6:'六'};
+                        const days = (r.digest?.weekdays || ['1']).map(d => dayNames[d]).join('、');
+                        digestDesc = `周${days} ${time}`;
+                    } else {
+                        digestDesc = `每天 ${time}`;
+                    }
+                }
 
                 return `
                     <div class="ns-recipient-card">
@@ -3092,11 +3317,9 @@
                             </div>
                         </div>
                         <div class="ns-rc-tags">
-                            ${types.map(t => `<span class="ns-tag type">${t}</span>`).join('')}
+                            ${alertEnabled ? `<span class="ns-tag type">即时告警</span>${alertLevels.map(l => `<span class="ns-tag">${l}</span>`).join('')}` : '<span class="ns-tag" style="color:#999">即时告警关</span>'}
                             <span class="ns-tag-divider">|</span>
-                            ${levels.length ? levels.map(l => `<span class="ns-tag">${l}</span>`).join('') : '<span class="ns-tag" style="color:#999">无等级</span>'}
-                            <span class="ns-tag-divider">|</span>
-                            ${modules.length ? modules.map(m => `<span class="ns-tag">${m}</span>`).join('') : '<span class="ns-tag" style="color:#999">无模块</span>'}
+                            ${digestEnabled ? `<span class="ns-tag type">定时汇报</span><span class="ns-tag">${digestDesc}</span>` : '<span class="ns-tag" style="color:#999">定时汇报关</span>'}
                         </div>
                     </div>
                 `;
@@ -3136,20 +3359,34 @@
             editingRecipientIndex = index;
             const r = currentSettings.recipients[index];
             
-            // 填充编辑弹层
+            // 基本信息
             document.getElementById('nsEditEmail').value = r.email;
             document.getElementById('nsEditName').value = r.name || '';
             
-            document.getElementById('nsEditTypeAlert').checked = r.types.alert;
-            document.getElementById('nsEditTypeDigest').checked = r.types.digest;
+            // 即时告警区块
+            const alertEnabled = r.alert?.enabled !== false;
+            document.getElementById('nsEditAlertEnabled').checked = alertEnabled;
+            document.getElementById('nsEditLevelUrgent').checked = r.alert?.levels?.urgent !== false;
+            document.getElementById('nsEditLevelWarning').checked = r.alert?.levels?.warning !== false;
+            document.getElementById('nsEditLevelInfo').checked = r.alert?.levels?.info ?? false;
+            toggleAlertSection();
             
-            document.getElementById('nsEditLevelUrgent').checked = r.levels.urgent;
-            document.getElementById('nsEditLevelWarning').checked = r.levels.warning;
-            document.getElementById('nsEditLevelInfo').checked = r.levels.info;
-            
-            document.getElementById('nsEditModFront').checked = r.modules.front;
-            document.getElementById('nsEditModSecurity').checked = r.modules.security;
-            document.getElementById('nsEditModDevice').checked = r.modules.device;
+            // 定时汇报区块
+            const digestEnabled = r.digest?.enabled ?? false;
+            document.getElementById('nsEditDigestEnabled').checked = digestEnabled;
+            document.getElementById('nsEditDigestFreq').value = r.digest?.frequency || 'daily';
+            // 周几多选
+            const weekdays = r.digest?.weekdays || ['1'];
+            [0,1,2,3,4,5,6].forEach(d => {
+                const cb = document.getElementById('nsEditWeekday' + d);
+                if (cb) cb.checked = weekdays.includes(String(d));
+            });
+            document.getElementById('nsEditDigestTime').value = r.digest?.time || '09:00';
+            document.getElementById('nsEditDigestPending').checked = r.digest?.content?.pending !== false;
+            document.getElementById('nsEditDigestResolved').checked = r.digest?.content?.resolved !== false;
+            document.getElementById('nsEditDigestHealth').checked = r.digest?.content?.health ?? false;
+            toggleDigestSection();
+            toggleDigestWeekday();
             
             document.getElementById('nsEditorOverlay').classList.add('show');
         }
@@ -3157,6 +3394,30 @@
         function closeRecipientEditor() {
             document.getElementById('nsEditorOverlay').classList.remove('show');
             editingRecipientIndex = -1;
+        }
+
+        function toggleAlertSection() {
+            const checkbox = document.getElementById('nsEditAlertEnabled');
+            const section = document.getElementById('nsAlertSection');
+            if (checkbox && section) {
+                section.classList.toggle('show', checkbox.checked);
+            }
+        }
+
+        function toggleDigestSection() {
+            const checkbox = document.getElementById('nsEditDigestEnabled');
+            const section = document.getElementById('nsDigestSection');
+            if (checkbox && section) {
+                section.classList.toggle('show', checkbox.checked);
+            }
+        }
+
+        function toggleDigestWeekday() {
+            const freq = document.getElementById('nsEditDigestFreq')?.value;
+            const row = document.getElementById('nsDigestWeekdayRow');
+            if (row) {
+                row.style.display = freq === 'weekly' ? 'flex' : 'none';
+            }
         }
 
         function saveRecipientFromEditor() {
@@ -3172,40 +3433,47 @@
             r.email = email;
             r.name = document.getElementById('nsEditName').value.trim();
             
-            r.types.alert = document.getElementById('nsEditTypeAlert').checked;
-            r.types.digest = document.getElementById('nsEditTypeDigest').checked;
+            // 即时告警设置
+            r.alert = {
+                enabled: document.getElementById('nsEditAlertEnabled').checked,
+                levels: {
+                    urgent: document.getElementById('nsEditLevelUrgent').checked,
+                    warning: document.getElementById('nsEditLevelWarning').checked,
+                    info: document.getElementById('nsEditLevelInfo').checked
+                }
+            };
             
-            r.levels.urgent = document.getElementById('nsEditLevelUrgent').checked;
-            r.levels.warning = document.getElementById('nsEditLevelWarning').checked;
-            r.levels.info = document.getElementById('nsEditLevelInfo').checked;
-            
-            r.modules.front = document.getElementById('nsEditModFront').checked;
-            r.modules.security = document.getElementById('nsEditModSecurity').checked;
-            r.modules.device = document.getElementById('nsEditModDevice').checked;
+            // 定时汇报设置
+            const weekdays = [];
+            [0,1,2,3,4,5,6].forEach(d => {
+                const cb = document.getElementById('nsEditWeekday' + d);
+                if (cb && cb.checked) weekdays.push(String(d));
+            });
+            r.digest = {
+                enabled: document.getElementById('nsEditDigestEnabled').checked,
+                frequency: document.getElementById('nsEditDigestFreq').value,
+                weekdays: weekdays.length ? weekdays : ['1'],
+                time: document.getElementById('nsEditDigestTime').value,
+                content: {
+                    pending: document.getElementById('nsEditDigestPending').checked,
+                    resolved: document.getElementById('nsEditDigestResolved').checked,
+                    health: document.getElementById('nsEditDigestHealth').checked
+                }
+            };
             
             renderRecipientList();
             closeRecipientEditor();
         }
 
         function updateNotifySettingsDigestWeekdayVisibility() {
-            const freq = document.getElementById('nsDigestFreq')?.value || 'daily';
-            const row = document.getElementById('nsDigestWeekday');
-            if (!row) return;
-            row.style.display = freq === 'weekly' ? 'inline-block' : 'none';
+            // 已废弃，保留空函数避免报错
         }
 
         function toggleNotifySettingsPreview() {
-            // 新版暂不需要预览文本，直接在列表中展示
             alert('新版配置已在列表中直观展示，无需预览文本。');
         }
 
         function saveNotifySettings() {
-            // 更新全局设置
-            currentSettings.dedupeMinutes = Number(document.getElementById('nsDedupe')?.value || 30);
-            currentSettings.digest.frequency = document.getElementById('nsDigestFreq')?.value || 'daily';
-            currentSettings.digest.weekday = document.getElementById('nsDigestWeekday')?.value || 'mon';
-            currentSettings.digest.time = document.getElementById('nsDigestTime')?.value || '09:00';
-            
             writeNotifyEmailSettings(currentSettings);
             
             const saved = document.getElementById('notifySettingsSaved');
